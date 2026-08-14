@@ -25,7 +25,16 @@ VERB_MAP: list[tuple[str, str]] = [
     (r"\b(point (at|to)|show me where)\b", "point_at"),
     (r"\b(take me to|walk me to|present|show me the)\b", "present"),
     (r"\b(look at|face|turn to|watch)\b", "look_at"),
-    (r"\b(climb on|get on|jump on|step onto|mount|climb)\b", "climb"),
+    # Physical gestures — perform/do/can you → dispatch the named action
+    (r"\b(perform|do a|do the|can you|execute)\b.*\bclimb\b", "climb"),
+    (r"\b(perform|do a|do the|can you|execute)\b.*\bjump\b", "jump"),
+    (r"\b(perform|do a|do the|can you|execute)\b.*\bsit\b", "sit"),
+    (r"\b(perform|do a|do the|can you|execute)\b.*\bdance\b", "dance"),
+    (r"\b(perform|do a|do the|can you|execute)\b.*\bwave\b", "wave"),
+    (r"\b(perform|do a|do the|can you|execute)\b.*\bnod\b", "nod"),
+    # Direct gesture triggers
+    (r"\b(climb on|get on|step onto|mount|climb onto)\b", "climb"),
+    (r"\b(climb)\b", "climb"),
     (r"\b(sit on|sit near|rest on)\b", "navigate"),
     (r"\b(sit down|take a seat|sit)\b", "sit"),
     (r"\b(jump|hop|leap)\b", "jump"),
