@@ -32,6 +32,11 @@ export async function getRoom(roomId: string): Promise<SceneGraph> {
   return data;
 }
 
+export async function resetRoom(roomId: string): Promise<SceneGraph> {
+  const { data } = await api.post<SceneGraph>(`/rooms/${roomId}/reset`);
+  return data;
+}
+
 export async function listRooms() {
   const { data } = await api.get<
     { id: string; name: string; object_count: number }[]

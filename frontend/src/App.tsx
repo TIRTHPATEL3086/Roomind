@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 
-import { getRoom } from "./api/client";
+import { getRoom, resetRoom } from "./api/client";
 import { connectWS, disconnectWS } from "./api/ws";
 import { WorldDashboard } from "./components/WorldDashboard";
 import { useRoute } from "./hooks/useRoute";
@@ -33,9 +33,17 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     useSceneStore.getState().setLoading(true);
-    getRoom(roomId)
+    // On page load or fresh reload, reset the demo room so uploaded transient objects
+    // are cleared and default furniture is cleanly restored
+    resetRoom(roomId)
       .then((g) => {
         if (!cancelled) useSceneStore.getState().setGraph(g);
+      })
+      .catch(() => {
+        // Fallback to getRoom if reset fails
+        return getRoom(roomId).then((g) => {
+          if (!cancelled) useSceneStore.getState().setGraph(g);
+        });
       })
       .catch((e) => {
         if (!cancelled) {
