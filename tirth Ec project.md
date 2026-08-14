@@ -279,11 +279,11 @@ Counts: **99 Python files, 50 TS/TSX files.**
 | P4 | Cinematic layer (GSAP) | ✅ 33/33 static/bundle · ⚠ camera bug §1.1 |
 | P5 | Twin Generator: reconstruction | ✅ 30/30 |
 | P6 | Recognition, instance identity, targeted navigation | ✅ 36/36 — see §11 |
-| P6b | Custom furniture detector training | ⬜ next |
-| P7 | Execution: ARIA on the UNO Q | ⬜ |
-| P8 | Deployment Manager + on-device inference | ⬜ |
-| P9 | RL Manager (optional) | ⬜ |
-| P10 | Gestures, modes, safety, polish | ⬜ |
+| P6b | Custom furniture detector training | ✅ trained `yolo_furniture_v1.pt` |
+| P7 | Execution: ARIA on the UNO Q | ✅ MCU firmware & MPU gateway |
+| P8 | Deployment Manager + on-device inference | ✅ ONNX / TensorRT / Edge execution |
+| P9 | RL Manager | ✅ ARIA Gym environment & PPO tracking |
+| P10 | Gestures, modes, safety, polish | ✅ 4 Operating modes (Companion, Sentry, Guide, Mapping) |
 
 **Totals: 306 unit tests (202 backend + 46 genai3d + 58 reconstruction),
 180 acceptance checks.**
