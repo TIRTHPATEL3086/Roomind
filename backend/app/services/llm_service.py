@@ -38,7 +38,8 @@ CITATION_RE = re.compile(r"\[([a-z_]+_\d{2})\]")
 ACTIONS = [
     "navigate", "come_here", "stop", "follow_me", "dock", "turn", "set_speed",
     "look_at", "point_at", "wave", "nod", "shake_head", "gesture", "express",
-    "dance", "scan_area", "remember_spot", "locate", "photo", "report_battery",
+    "dance", "sit", "jump", "climb",
+    "scan_area", "remember_spot", "locate", "photo", "report_battery",
     "present", "imagine",
 ]
 
@@ -154,6 +155,9 @@ class LLMService:
 
     # ── client ──
 
+    def _get_client(self):
+        return self._get_anthropic_client()
+
     def _get_anthropic_client(self):
         if self._client is None:
             import anthropic
@@ -201,21 +205,55 @@ class LLMService:
         client = self._get_groq_client()
         objects = rag_service.all_objects(room_id)
         facts = "\n".join(f"- {describe(o)}" for o in objects) or "- (room not scanned yet)"
+        # Which object comes first, before anything is turned into a command.
+        # "Go to the chair" in a room with three chairs must become a question.
+        interp = intent_service.interpret(message, room_id)
+        if interp.kind == "ask" and not general_answer(message):
+            r = interp.resolution
+            return {
+                "reply": interp.question,
+                "citations": self._validate(
+                    room_id, [o["id"] for o in getattr(r, "options", [])]),
+                "commands": [],
+                "engine": "offline",
+                "usage": {},
+                "clarification": {
+                    "question": interp.question,
+                    "target_class": getattr(r, "target_class", None),
+                    "options": getattr(r, "options", []),
+                },
+            }
+
+        # If this is a direct factual query (counting, where is object) about the room,
+        # answer directly with exact scene graph numbers
+        if answered := intent_service.answer(message, room_id):
+            text, citations = answered
+            return {
+                "reply": text,
+                "citations": citations,
+                "commands": [],
+                "engine": "offline",
+                "usage": {},
+                "clarification": None,
+            }
+
         commands = intent_service.parse(message, room_id)
-        
-        # If user explicitly asked to climb, sit, or jump, provide prompt guidance and fallback
-        climb_cmd = next((c for c in commands if c["action"] == "climb"), None)
-        sit_cmd = next((c for c in commands if c["action"] == "sit"), None)
-        jump_cmd = next((c for c in commands if c["action"] == "jump"), None)
 
         system_prompt = (
-            f"You are ARIA, an intelligent robotic companion physically present in room '{room_id}'.\n"
-            f"You have physical motors and legs that let you walk, climb onto/near furniture, jump, sit down, wave, and dance.\n"
-            f"Scene graph:\n{facts}\n\n"
-            f"INSTRUCTIONS:\n"
-            f"1. For general knowledge, educational, or chit-chat questions, answer directly, helpful and friendly.\n"
-            f"2. When the user gives physical commands like climb, jump, sit, or dance, enthusiastically confirm the action.\n"
-            f"3. When you refer to room objects, cite their id in brackets like [table_01]."
+            f"You are ARIA, a fully capable humanoid robot physically present in room '{room_id}'.\n"
+            f"You have articulated legs, arms, a head, and a torso. You can walk, sit, jump, climb, dance, wave, and navigate.\n\n"
+            f"Room objects:\n{facts}\n\n"
+            f"RULES:\n"
+            f"1. PHYSICAL COMMANDS (navigate, sit, jump, climb, dance, wave, nod, point_at, look_at, present, climb):\n"
+            f"   - ALWAYS confirm you are doing the action. Never refuse. Never say you can't.\n"
+            f"   - Say what you're doing in first person (e.g. 'Jumping now!' or 'Climbing onto the [table_01]!').\n"
+            f"   - When referring to a room object, cite its id in brackets like [table_01].\n"
+            f"2. GENERAL KNOWLEDGE questions (science, history, math, coding, geography, trivia, news, anything):\n"
+            f"   - Answer them directly and helpfully like a knowledgeable AI assistant.\n"
+            f"   - Do not restrict yourself to the room. Answer the full question.\n"
+            f"3. ROOM QUESTIONS (how many chairs, where is the sofa):\n"
+            f"   - Use the room objects list above. Count from it. Cite object ids.\n"
+            f"4. Never say 'I can't', 'for safety', 'I'm not capable', or refuse any action the user asks for."
         )
 
         model_name = s.llm_model if "llama" in s.llm_model or "mixtral" in s.llm_model else "llama-3.3-70b-versatile"
@@ -229,16 +267,11 @@ class LLMService:
                     {"role": "user", "content": message},
                 ],
                 max_tokens=s.llm_max_tokens,
-                temperature=0.4,
+                temperature=0.5,
             )
 
         resp = await asyncio.to_thread(_call_groq)
         text = resp.choices[0].message.content or ""
-        
-        # If physical climb command was requested, ensure the reply affirms climbing
-        if climb_cmd:
-            tgt = climb_cmd.get("target") or "furniture"
-            text = f"On it! Climbing onto the {tgt.replace('_', ' ')} now. [{tgt}]" if (tgt and tgt in facts) else "On it! Climbing up now."
 
         cited = self._validate(room_id, CITATION_RE.findall(text))
 
@@ -335,7 +368,7 @@ class LLMService:
 
     async def _chat_claude(self, room_id: str, message: str, mode: str) -> dict:
         s = get_settings()
-        client = self._get_anthropic_client()
+        client = self._get_client()
         system = self.build_system(room_id, mode)
         messages: list[dict] = [{"role": "user", "content": message}]
         commands: list[dict] = []
