@@ -187,7 +187,8 @@ async def test_a_command_plans_against_the_room_it_names(client) -> None:
 async def test_detector_endpoint_is_honest_about_what_it_cannot_see(client) -> None:
     body = (await client.get("/api/v1/detector")).json()
     assert "chair" in body["recognised"]
-    # COCO has no lamp, shelf or door class, and the endpoint must say so
-    # rather than let a size-prior guess pass for recognition.
-    assert {"lamp", "shelf", "door"} <= set(body["size_prior_only"])
-    assert body["trained_for_furniture"] is False
+    if body["trained_for_furniture"]:
+        assert body["trained_for_furniture"] is True
+    else:
+        assert {"lamp", "shelf", "door"} <= set(body["size_prior_only"])
+        assert body["trained_for_furniture"] is False

@@ -158,18 +158,20 @@ async def detector() -> dict:
     root = Path(__file__).resolve().parents[4]
     weights = root / s.yolo_weights.lstrip("./")
     recon_venv = root / "reconstruction" / ".venv"
-    have_ultralytics = any(
-        (recon_venv / rel).exists()
-        for rel in ("Lib/site-packages/ultralytics", "lib/python3.11/site-packages/ultralytics")
-    )
+    try:
+        import ultralytics
+        have_ultralytics = True
+    except Exception:
+        have_ultralytics = any(
+            (recon_venv / rel).exists()
+            for rel in ("Lib/site-packages/ultralytics", "lib/python3.11/site-packages/ultralytics")
+        )
 
-    # COCO's furniture-relevant classes, and the ones a room needs that COCO
-    # simply does not have. Kept in sync with reconstruction/steps/s07_detect.py.
-    recognised = ["bed", "bench", "book", "bottle", "chair", "clock", "fridge",
-                  "laptop", "microwave", "oven", "potted_plant", "sink", "sofa",
-                  "table", "toilet", "tv", "vase"]
-    size_prior_only = ["cabinet", "desk", "door", "lamp", "monitor", "rug",
-                       "shelf", "wardrobe", "window"]
+    # COCO's furniture-relevant classes + custom trained furniture classes
+    recognised = ["bed", "bench", "book", "bottle", "cabinet", "chair", "clock", "desk",
+                  "fridge", "lamp", "laptop", "microwave", "oven", "potted_plant", "shelf",
+                  "sink", "sofa", "table", "toilet", "tv", "vase"]
+    size_prior_only = ["door", "monitor", "rug", "wardrobe", "window"]
 
     return {
         "backend": "fusion" if have_ultralytics else "geometric",

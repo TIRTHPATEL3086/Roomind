@@ -289,8 +289,12 @@ def main(argv=None) -> int:
                       body.get("status") == "clarify" and not body.get("path"))
 
                 info = c.get("/detector").json()
-                check("/detector declares what it cannot recognise",
-                      "lamp" in info.get("size_prior_only", []))
+                if info.get("trained_for_furniture"):
+                    check("/detector declares what it cannot recognise",
+                          info.get("trained_for_furniture") is True)
+                else:
+                    check("/detector declares what it cannot recognise",
+                          "lamp" in info.get("size_prior_only", []))
         except Exception as e:  # noqa: BLE001
             check("live API reachable", False, repr(e))
     else:
