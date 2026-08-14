@@ -27,6 +27,15 @@ async def get_room(room_id: str) -> dict:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
+@router.post("/rooms/{room_id}/reset")
+async def reset_room(room_id: str) -> dict:
+    """Reset the room back to its default demo fixture."""
+    try:
+        return scene_service.reset_room(room_id)
+    except NotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
 @router.get("/rooms/{room_id}/objects/{object_id}")
 async def get_object(room_id: str, object_id: str) -> dict:
     try:

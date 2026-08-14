@@ -63,6 +63,10 @@ class SceneService:
             log.info("scene '%s' loaded from fixture (%d objects)",
                      extra["room_id"], len(extra["objects"]))
 
+    def reset_room(self, room_id: str = "demo_room") -> dict:
+        """Reset a room back to its original demo fixture data."""
+        self.load_fixture()
+        graph = self.get(room_id)
         return graph
 
     def get(self, room_id: str) -> dict:

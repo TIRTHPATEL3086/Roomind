@@ -29,12 +29,18 @@ LIMITS: dict[str, tuple[float, float]] = {
     "r_shoulder_roll": (0.0, 90.0),
     "l_elbow": (0.0, 120.0),
     "r_elbow": (0.0, 120.0),
+    "l_hip": (-30.0, 110.0),
+    "r_hip": (-30.0, 110.0),
+    "l_knee": (0.0, 120.0),
+    "r_knee": (0.0, 120.0),
+    "body_y": (-0.15, 0.60),
 }
 
 REST_POSE: dict[str, float] = {
     "head_pan": 0.0, "head_tilt": 0.0, "waist_yaw": 0.0,
     "l_shoulder_pitch": 0.0, "l_shoulder_roll": 5.0, "l_elbow": 15.0,
     "r_shoulder_pitch": 0.0, "r_shoulder_roll": 5.0, "r_elbow": 15.0,
+    "l_hip": 0.0, "r_hip": 0.0, "l_knee": 0.0, "r_knee": 0.0, "body_y": 0.0,
 }
 
 # Default slew rates, degrees/second. The head is deliberately slower: a head that

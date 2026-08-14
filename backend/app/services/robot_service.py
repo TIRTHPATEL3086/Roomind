@@ -56,6 +56,9 @@ ACTION_HANDLERS: dict[str, str] = {
     "photo": "_do_simple",
     "report_battery": "_do_simple",
     "imagine": "_do_imagine",
+    "sit": "_do_simple",
+    "jump": "_do_simple",
+    "climb": "_do_climb",
 }
 
 
@@ -310,6 +313,19 @@ class RobotService:
         await bus.publish("command.status", {
             "command_id": cmd["id"], "status": "succeeded", "room_id": cmd.get("room_id"),
         })
+
+    async def _do_climb(self, cmd: dict) -> None:
+        """Composite climb: navigate near the object if target is given, then execute climb animation."""
+        if cmd.get("target"):
+            try:
+                await self._do_navigate(cmd)
+            except Exception as e:
+                log.warning("could not navigate before climbing: %s", e)
+        mqtt_service.publish_command(self.robot_id, {
+            "id": cmd["id"], "action": "climb", "target": cmd.get("target"),
+            "params": cmd.get("params") or {}, "robot_id": self.robot_id, "seq": cmd["seq"],
+        })
+        await self._set_status(cmd, "dispatched")
 
     async def _do_simple(self, cmd: dict) -> None:
         """Pass-through actions the MCU executes directly."""

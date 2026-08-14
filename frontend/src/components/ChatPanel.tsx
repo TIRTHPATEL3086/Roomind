@@ -12,8 +12,6 @@ import { useSceneStore } from "../store/sceneStore";
 import { useUIStore } from "../store/uiStore";
 import { Chip, Panel } from "./ui/Panel";
 
-const ROOM_ID = "demo_room";
-
 /** A cited object id. Hovering highlights it in 3D; clicking selects it —
  *  the link between what ARIA says and what you can see (spec 13.6). */
 function Citation({ id }: { id: string }) {
@@ -143,16 +141,17 @@ function Bubble({ m, onPick }: { m: ChatMessage; onPick: (t: string) => void }) 
 
 export function ChatPanel() {
   const open = useUIStore((s) => s.chatOpen);
+  const roomId = useSceneStore((s) => s.roomId);
   const { messages, thinking, suggestions, draft } = useChatStore();
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api
-      .get<string[]>(`/chat/${ROOM_ID}/suggestions`)
+      .get<string[]>(`/chat/${roomId}/suggestions`)
       .then((r) => useChatStore.getState().setSuggestions(r.data))
       .catch(() => {});
-  }, []);
+  }, [roomId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -168,7 +167,7 @@ export function ChatPanel() {
     store.setThinking(true);
 
     try {
-      const { data } = await api.post("/chat", { room_id: ROOM_ID, message: msg });
+      const { data } = await api.post("/chat", { room_id: roomId, message: msg });
       store.push({
         role: "assistant",
         content: data.reply,

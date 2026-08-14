@@ -46,9 +46,11 @@ class Settings(BaseSettings):
     rag_backend: str = "lexical"
 
     anthropic_api_key: str = ""
-    llm_model: str = "claude-opus-5"
+    groq_api_key: str = ""
+    llm_provider: str = "auto"   # auto | groq | anthropic
+    llm_model: str = "llama-3.3-70b-versatile"
     llm_effort: str = "high"
-    llm_max_tokens: int = 16000
+    llm_max_tokens: int = 4096
     mock_llm: bool = False
 
     storage_root: str = "./storage"

@@ -7,8 +7,6 @@ import { useSceneStore } from "../store/sceneStore";
 import { useUIStore } from "../store/uiStore";
 import { Panel } from "./ui/Panel";
 
-const ROOM_ID = "demo_room";
-
 const STAGE_LABEL: Record<string, string> = {
   queued: "queued",
   prepare: "reading the image",
@@ -35,6 +33,7 @@ interface Job {
 }
 
 export function ImaginePanel() {
+  const roomId = useSceneStore((s) => s.roomId);
   const [job, setJob] = useState<Job | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -50,7 +49,7 @@ export function ImaginePanel() {
   async function upload(file: File) {
     const form = new FormData();
     form.append("image", file);
-    form.append("room_id", ROOM_ID);
+    form.append("room_id", roomId);
     form.append("prompt", file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "));
 
     try {
@@ -98,7 +97,7 @@ export function ImaginePanel() {
   }
 
   async function refreshScene() {
-    const { data } = await api.get(`/rooms/${ROOM_ID}`);
+    const { data } = await api.get(`/rooms/${roomId}`);
     useSceneStore.getState().setGraph(data);
   }
 

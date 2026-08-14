@@ -67,7 +67,9 @@ function ObjectBox({
   const generated = obj.source === "generated";
   const accent = generated ? "#A78BFA" : (obj.color ?? "#888888");
   const active = hovered || selected;
-  const model = modelFor(obj.label);
+  const model = obj.mesh_url
+    ? { url: obj.mesh_url, fit: "contain" as const, tint: false }
+    : modelFor(obj.label);
 
   return (
     // Named so the object is findable by id in three.js devtools and in the

@@ -4,9 +4,14 @@ Run:  cd backend && uvicorn main:app --reload --port 8000
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import sys
 import time
 from contextlib import asynccontextmanager
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,7 +34,7 @@ DEFAULT_CAPABILITIES = [
     "navigate", "come_here", "stop", "follow_me", "dock", "turn", "set_speed",
     "look_at", "point_at", "wave", "nod", "shake_head", "gesture", "express",
     "dance", "scan_area", "remember_spot", "locate", "photo", "report_battery",
-    "present", "imagine",
+    "present", "imagine", "sit", "jump", "climb",
 ]
 
 
@@ -38,9 +43,9 @@ async def lifespan(app: FastAPI):
     log.info("RoomMind starting (env=%s, robot=%s, mode=%s)",
              settings.app_env, settings.robot_id, settings.robot_mode)
 
-    await mqtt_service.connect()
     scene = scene_service.load_fixture()
     await robot_service.bootstrap(DEFAULT_CAPABILITIES, scene)
+    await mqtt_service.connect()
 
     if scene:
         n = rag_service.index_room(scene)

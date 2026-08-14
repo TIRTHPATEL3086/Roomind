@@ -78,7 +78,7 @@ RELATION_PATTERNS: tuple[tuple[str, str], ...] = (
     (r"\bnear(?:est)?\s+(?:to\s+)?(?:the\s+|a\s+|an\s+|my\s+)([a-z_ ]+)", "near"),
     (r"\bclose\s+to\s+(?:the\s+|a\s+|an\s+|my\s+)?([a-z_ ]+)", "near"),
     (r"\bby\s+the\s+([a-z_ ]+)", "near"),
-    (r"\bon\s+(?:the\s+|a\s+|an\s+|my\s+)([a-z_ ]+)", "on"),
+    (r"\bon\s+top\s+of\s+(?:the\s+|a\s+|an\s+|my\s+)?([a-z_ ]+)", "on"),
     (r"\bunder(?:neath)?\s+(?:the\s+|a\s+|an\s+|my\s+)?([a-z_ ]+)", "under"),
 )
 
@@ -93,6 +93,7 @@ NOT_A_CLASS = {
     "thing", "object", "stuff", "towards", "toward", "up", "down", "then",
     "under", "underneath", "second", "first", "third", "far", "nearest",
     "closest", "furthest", "farthest", "leftmost", "rightmost", "is", "are",
+    "climb", "climbed", "climbing", "jump", "jumped", "sit", "sat", "sitting",
 }
 
 # Trailing words the class noun regex may pick up but that are never part of
@@ -313,5 +314,5 @@ def _strip_verbs(text: str) -> str:
     return re.sub(
         r"^\s*(?:please\s+)?(?:can you\s+|could you\s+|would you\s+)?"
         r"(?:go|drive|move|walk|navigate|head|take me|come|show me|point|look|"
-        r"turn|face|present)\b(?:\s+(?:to|at|over|towards?|me))*",
+        r"turn|face|present|climb|get on|jump on|step onto|sit on|sit near|rest on)\b(?:\s+(?:to|at|over|towards?|me|on|onto))*",
         " ", text)

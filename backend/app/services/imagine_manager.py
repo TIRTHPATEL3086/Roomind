@@ -110,18 +110,28 @@ class ImagineManager:
         if job.get("prompt"):
             cmd += ["--hint", job["prompt"]]
 
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                *cmd, cwd=str(ROOT),
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        def _execute_sync():
+            import subprocess
+            p = subprocess.Popen(
+                cmd, cwd=str(ROOT),
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, bufsize=1, encoding="utf-8", errors="replace",
             )
+            lines = []
+            if p.stdout:
+                for line in p.stdout:
+                    lines.append(line.strip())
+            p.wait(timeout=s.imagine_timeout_s + 30)
+            err = p.stderr.read() if p.stderr else ""
+            return p.returncode, lines, err
+
+        try:
+            rc, lines, stderr = await asyncio.to_thread(_execute_sync)
         except Exception as e:  # noqa: BLE001
             await self._fail(job, f"could not start pipeline: {e}")
             return
 
-        assert proc.stdout is not None
-        async for raw in proc.stdout:
-            line = raw.decode(errors="replace").strip()
+        for line in lines:
             if not line.startswith("{"):
                 continue
             try:
@@ -130,21 +140,10 @@ class ImagineManager:
                 continue
             await self._on_progress(job, evt)
 
-        # Give the process a hard ceiling so a wedged backend can't hang the job.
-        try:
-            await asyncio.wait_for(proc.wait(),
-                                   timeout=s.imagine_timeout_s + 30)
-        except TimeoutError:
-            proc.kill()
-            await self._fail(job, "pipeline timed out")
-            return
-
-        stderr = (await proc.stderr.read()).decode(errors="replace") if proc.stderr else ""
-
         # 0 = generated, 3 = proxy fallback (still a usable object).
-        if proc.returncode not in (0, 3):
+        if rc not in (0, 3):
             await self._fail(job, job.get("error") or stderr.strip()[-300:]
-                             or f"pipeline exited {proc.returncode}")
+                             or f"pipeline exited {rc}")
             return
 
         await self._preview(job)

@@ -25,17 +25,21 @@ VERB_MAP: list[tuple[str, str]] = [
     (r"\b(point (at|to)|show me where)\b", "point_at"),
     (r"\b(take me to|walk me to|present|show me the)\b", "present"),
     (r"\b(look at|face|turn to|watch)\b", "look_at"),
-    (r"\b(go|drive|move|navigate|head)\b.*\bto\b", "navigate"),
+    (r"\b(climb on|get on|jump on|step onto|mount|climb)\b", "climb"),
+    (r"\b(sit on|sit near|rest on)\b", "navigate"),
+    (r"\b(sit down|take a seat|sit)\b", "sit"),
+    (r"\b(jump|hop|leap)\b", "jump"),
+    (r"\b(go|drive|move|navigate|head|walk|run)\b.*\bto\b", "navigate"),
     (r"\bcome (here|to me|over)\b", "come_here"),
     (r"\bfollow me\b", "follow_me"),
     (r"\b(go home|dock|charge|go to your dock)\b", "dock"),
     (r"\b(take|snap) a (photo|picture|pic)\b", "photo"),
-    (r"\b(wave|say hi|say hello)\b", "wave"),
-    (r"\b(nod|say yes)\b", "nod"),
-    (r"\b(shake your head|say no)\b", "shake_head"),
-    (r"\b(shrug|celebrate)\b", "gesture"),
-    (r"\bdance\b", "dance"),
-    (r"\b(battery|charge level|how much power)\b", "report_battery"),
+    (r"\b(wave|say hi|say hello|greet)\b", "wave"),
+    (r"\b(nod|say yes|agree)\b", "nod"),
+    (r"\b(shake your head|say no|disagree)\b", "shake_head"),
+    (r"\b(shrug|celebrate|cheer)\b", "gesture"),
+    (r"\b(dance|party|groove|bust a move)\b", "dance"),
+    (r"\b(battery|charge level|how much power|energy)\b", "report_battery"),
     (r"\bscan\b", "scan_area"),
     (r"\bremember this (spot|place|position)\b", "remember_spot"),
     (r"\bturn (left|right|around)\b", "turn"),
@@ -43,13 +47,13 @@ VERB_MAP: list[tuple[str, str]] = [
     (r"\bwhere('s| is| are)\b", "locate"),
 ]
 
-TARGETED = {"navigate", "look_at", "point_at", "present", "locate", "imagine"}
+TARGETED = {"navigate", "look_at", "point_at", "present", "locate", "imagine", "climb"}
 
 # The subset that MOVES or AIMS ARIA at one specific object, and therefore has
 # to know exactly which one. `locate` is excluded on purpose: "where's the
 # lamp?" is a question, and `answer()` gives it a better reply than the
 # resolver's clarification machinery would.
-MOVEMENT_VERBS = {"navigate", "present", "point_at", "look_at"}
+MOVEMENT_VERBS = {"navigate", "present", "point_at", "look_at", "climb"}
 
 
 @dataclass

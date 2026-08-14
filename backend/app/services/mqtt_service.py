@@ -118,14 +118,16 @@ class MqttService:
             log.warning("dropping non-JSON message on %s", msg.topic)
             return
 
-        if self._loop is None:
-            return
-        for pattern, handler in self._handlers:
-            if pattern.match(msg.topic):
-                # hop from paho's thread onto the event loop
-                asyncio.run_coroutine_threadsafe(
-                    handler(msg.topic, payload), self._loop
-                )
+        try:
+            loop = self._loop or asyncio.get_event_loop()
+            if loop and loop.is_running():
+                for pattern, handler in self._handlers:
+                    if pattern.match(msg.topic):
+                        asyncio.run_coroutine_threadsafe(
+                            handler(msg.topic, payload), loop
+                        )
+        except Exception as e:  # noqa: BLE001
+            log.debug("error dispatching MQTT message: %s", e)
 
     # ── publishing ──
 

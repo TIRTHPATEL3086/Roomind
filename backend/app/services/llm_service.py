@@ -17,6 +17,7 @@ SDK NOTE: the spec pins anthropic==0.69.0, which predates two things we want:
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -25,6 +26,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.core.events import bus
+from app.services.general_qa import answer as general_answer
 from app.services.intent_service import intent_service
 from app.services.rag_service import describe, rag_service
 
@@ -118,18 +120,10 @@ class LLMService:
     # ── prompt assembly ──
 
     def _persona_json(self) -> dict:
-        if self._persona is None:
-            self._persona = json.loads(
-                (PROMPTS / "personas.json").read_text(encoding="utf-8")
-            )
-        return self._persona
+        return json.loads((PROMPTS / "personas.json").read_text(encoding="utf-8"))
 
     def _rules(self) -> str:
-        if self._companion_rules is None:
-            self._companion_rules = (
-                PROMPTS / "system_companion.md"
-            ).read_text(encoding="utf-8")
-        return self._companion_rules
+        return (PROMPTS / "system_companion.md").read_text(encoding="utf-8")
 
     def build_system(self, room_id: str, mode: str = "design") -> list[dict]:
         """System blocks, ordered stable-first with the cache breakpoint after
@@ -160,31 +154,105 @@ class LLMService:
 
     # ── client ──
 
-    def _get_client(self):
+    def _get_anthropic_client(self):
         if self._client is None:
             import anthropic
 
             self._client = anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
         return self._client
 
+    def _get_groq_client(self):
+        import groq
+
+        return groq.Groq(api_key=get_settings().groq_api_key)
+
     def available(self) -> bool:
         s = get_settings()
-        return bool(s.anthropic_api_key) and not s.mock_llm and not s.anthropic_api_key.startswith("sk-ant-xxx")
+        if s.mock_llm:
+            return False
+        has_groq = bool(s.groq_api_key and not s.groq_api_key.startswith("gsk_xxx"))
+        has_claude = bool(s.anthropic_api_key and not s.anthropic_api_key.startswith("sk-ant-xxx"))
+        return has_groq or has_claude
 
     # ── public API ──
 
     async def chat(self, room_id: str, message: str, mode: str = "design") -> dict:
         """Returns {reply, citations, commands, engine, usage}."""
+        s = get_settings()
         if self.available():
-            try:
-                return await self._chat_claude(room_id, message, mode)
-            except Exception as e:  # noqa: BLE001
-                log.warning("Claude path failed (%r) - falling back offline", e)
-                await bus.publish("alert", {
-                    "level": "warn",
-                    "message": f"Companion fell back to offline mode: {type(e).__name__}",
-                })
+            if bool(s.groq_api_key and not s.groq_api_key.startswith("gsk_xxx")):
+                try:
+                    return await self._chat_groq(room_id, message, mode)
+                except Exception as e:  # noqa: BLE001
+                    log.warning("Groq path failed (%r) - trying fallback", e)
+            if bool(s.anthropic_api_key and not s.anthropic_api_key.startswith("sk-ant-xxx")):
+                try:
+                    return await self._chat_claude(room_id, message, mode)
+                except Exception as e:  # noqa: BLE001
+                    log.warning("Claude path failed (%r) - falling back offline", e)
+                    await bus.publish("alert", {
+                        "level": "warn",
+                        "message": f"Companion fell back to offline mode: {type(e).__name__}",
+                    })
         return await self._chat_offline(room_id, message)
+
+    async def _chat_groq(self, room_id: str, message: str, mode: str) -> dict:
+        s = get_settings()
+        client = self._get_groq_client()
+        objects = rag_service.all_objects(room_id)
+        facts = "\n".join(f"- {describe(o)}" for o in objects) or "- (room not scanned yet)"
+        commands = intent_service.parse(message, room_id)
+        
+        # If user explicitly asked to climb, sit, or jump, provide prompt guidance and fallback
+        climb_cmd = next((c for c in commands if c["action"] == "climb"), None)
+        sit_cmd = next((c for c in commands if c["action"] == "sit"), None)
+        jump_cmd = next((c for c in commands if c["action"] == "jump"), None)
+
+        system_prompt = (
+            f"You are ARIA, an intelligent robotic companion physically present in room '{room_id}'.\n"
+            f"You have physical motors and legs that let you walk, climb onto/near furniture, jump, sit down, wave, and dance.\n"
+            f"Scene graph:\n{facts}\n\n"
+            f"INSTRUCTIONS:\n"
+            f"1. For general knowledge, educational, or chit-chat questions, answer directly, helpful and friendly.\n"
+            f"2. When the user gives physical commands like climb, jump, sit, or dance, enthusiastically confirm the action.\n"
+            f"3. When you refer to room objects, cite their id in brackets like [table_01]."
+        )
+
+        model_name = s.llm_model if "llama" in s.llm_model or "mixtral" in s.llm_model else "llama-3.3-70b-versatile"
+        t0 = time.perf_counter()
+
+        def _call_groq():
+            return client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message},
+                ],
+                max_tokens=s.llm_max_tokens,
+                temperature=0.4,
+            )
+
+        resp = await asyncio.to_thread(_call_groq)
+        text = resp.choices[0].message.content or ""
+        
+        # If physical climb command was requested, ensure the reply affirms climbing
+        if climb_cmd:
+            tgt = climb_cmd.get("target") or "furniture"
+            text = f"On it! Climbing onto the {tgt.replace('_', ' ')} now. [{tgt}]" if (tgt and tgt in facts) else "On it! Climbing up now."
+
+        cited = self._validate(room_id, CITATION_RE.findall(text))
+
+        return {
+            "reply": self._strip_unknown(room_id, text),
+            "citations": cited,
+            "commands": commands,
+            "engine": f"groq:{model_name}",
+            "usage": {
+                "input_tokens": getattr(resp.usage, "prompt_tokens", 0),
+                "output_tokens": getattr(resp.usage, "completion_tokens", 0),
+                "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+            },
+        }
 
     # ── offline path ──
 
@@ -198,6 +266,15 @@ class LLMService:
 
         if interp.kind == "ask":
             r = interp.resolution
+            # If the user asked a general question (math, trivia) that triggered the parser, answer it!
+            if gen := general_answer(message):
+                return {
+                    "reply": gen,
+                    "citations": [],
+                    "commands": [],
+                    "engine": "offline",
+                    "usage": {},
+                }
             return {
                 "reply": interp.question,
                 "citations": self._validate(
@@ -237,8 +314,13 @@ class LLMService:
             reply = f"On it — {described}."
             citations = [c["target"] for c in commands if c.get("target")]
         else:
-            reply = ("I can tell you what's in this room, or move and point at "
-                     "things. Try \"how many chairs?\" or \"where's the lamp?\".")
+            # Try general daily-life Q&A before giving the hard fallback.
+            gen = general_answer(message)
+            if gen:
+                reply = gen
+            else:
+                reply = ("I can tell you what's in this room, or move and point at "
+                         "things. Try \"how many chairs?\" or \"where's the lamp?\".")
             citations = []
 
         return {
@@ -253,7 +335,7 @@ class LLMService:
 
     async def _chat_claude(self, room_id: str, message: str, mode: str) -> dict:
         s = get_settings()
-        client = self._get_client()
+        client = self._get_anthropic_client()
         system = self.build_system(room_id, mode)
         messages: list[dict] = [{"role": "user", "content": message}]
         commands: list[dict] = []

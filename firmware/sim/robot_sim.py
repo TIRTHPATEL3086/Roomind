@@ -52,31 +52,80 @@ CAPABILITIES = [
     "navigate", "come_here", "stop", "follow_me", "dock", "turn", "set_speed",
     "look_at", "point_at", "wave", "nod", "shake_head", "gesture", "express",
     "dance", "scan_area", "remember_spot", "locate", "photo", "report_battery",
-    "present", "imagine",
+    "present", "imagine", "sit", "jump", "climb",
 ]
 
-# Gesture keyframes: (joint, degrees, hold_seconds). Mirrors gestures.cpp (spec 12.6.5).
+# Gesture keyframes: (joint, degrees_or_elevation, hold_seconds). Enhanced fluid keyframes.
 GESTURES: dict[str, list[tuple[str, float, float]]] = {
     "wave": [
-        ("r_shoulder_pitch", 130, 0.30), ("r_elbow", 70, 0.25), ("r_elbow", 20, 0.25),
-        ("r_elbow", 70, 0.25), ("r_elbow", 20, 0.25), ("r_shoulder_pitch", 0, 0.40),
+        ("r_shoulder_pitch", 135, 0.20), ("r_shoulder_roll", 30, 0.15),
+        ("r_elbow", 80, 0.18), ("head_pan", -10, 0.15), ("head_tilt", 8, 0.15),
+        ("r_elbow", 25, 0.18), ("head_pan", -15, 0.15),
+        ("r_elbow", 75, 0.18), ("head_pan", -10, 0.15),
+        ("r_elbow", 25, 0.18), ("head_pan", 0, 0.15),
+        ("r_shoulder_pitch", 0, 0.30), ("r_shoulder_roll", 5, 0.25), ("head_tilt", 0, 0.20),
     ],
     "nod": [
-        ("head_tilt", 18, 0.22), ("head_tilt", -8, 0.22),
-        ("head_tilt", 18, 0.22), ("head_tilt", 0, 0.22),
+        ("head_tilt", 22, 0.18), ("head_tilt", -10, 0.18),
+        ("head_tilt", 20, 0.18), ("head_tilt", -5, 0.18),
+        ("head_tilt", 0, 0.20),
     ],
     "shake_head": [
-        ("head_pan", -22, 0.20), ("head_pan", 22, 0.20),
-        ("head_pan", -22, 0.20), ("head_pan", 0, 0.20),
+        ("head_pan", -28, 0.16), ("head_tilt", 5, 0.16),
+        ("head_pan", 28, 0.16), ("head_tilt", -5, 0.16),
+        ("head_pan", -22, 0.16), ("head_tilt", 0, 0.16),
+        ("head_pan", 0, 0.20),
     ],
     "shrug": [
-        ("l_shoulder_roll", 35, 0.30), ("r_shoulder_roll", 35, 0.30),
-        ("l_shoulder_roll", 5, 0.35), ("r_shoulder_roll", 5, 0.35),
+        ("l_shoulder_roll", 45, 0.25), ("r_shoulder_roll", 45, 0.25),
+        ("l_elbow", 40, 0.20), ("r_elbow", 40, 0.20),
+        ("head_tilt", -12, 0.25), ("head_pan", 12, 0.25),
+        ("l_shoulder_roll", 5, 0.30), ("r_shoulder_roll", 5, 0.30),
+        ("l_elbow", 15, 0.25), ("r_elbow", 15, 0.25),
+        ("head_tilt", 0, 0.25), ("head_pan", 0, 0.25),
     ],
     "dance": [
-        ("r_shoulder_pitch", 120, 0.30), ("l_shoulder_pitch", 40, 0.30),
-        ("r_shoulder_pitch", 40, 0.30), ("l_shoulder_pitch", 120, 0.30),
-        ("r_shoulder_pitch", 0, 0.30), ("l_shoulder_pitch", 0, 0.30),
+        ("r_shoulder_pitch", 140, 0.22), ("l_shoulder_pitch", 20, 0.22),
+        ("r_shoulder_roll", 35, 0.20), ("l_shoulder_roll", 15, 0.20),
+        ("head_pan", -25, 0.20), ("head_tilt", 12, 0.20),
+        ("r_shoulder_pitch", 20, 0.22), ("l_shoulder_pitch", 140, 0.22),
+        ("r_shoulder_roll", 15, 0.20), ("l_shoulder_roll", 35, 0.20),
+        ("head_pan", 25, 0.20), ("head_tilt", -10, 0.20),
+        ("r_elbow", 90, 0.20), ("l_elbow", 90, 0.20),
+        ("r_shoulder_pitch", 120, 0.22), ("l_shoulder_pitch", 120, 0.22),
+        ("head_pan", 0, 0.20), ("head_tilt", 15, 0.20),
+        ("r_shoulder_pitch", 0, 0.25), ("l_shoulder_pitch", 0, 0.25),
+        ("r_shoulder_roll", 5, 0.20), ("l_shoulder_roll", 5, 0.20),
+        ("r_elbow", 15, 0.20), ("l_elbow", 15, 0.20),
+        ("head_tilt", 0, 0.20),
+    ],
+    "sit": [
+        ("body_y", -0.08, 0.30), ("l_hip", 85, 0.30), ("r_hip", 85, 0.30),
+        ("l_knee", 85, 0.30), ("r_knee", 85, 0.30),
+        ("l_shoulder_pitch", 20, 0.30), ("r_shoulder_pitch", 20, 0.30),
+        ("head_tilt", 5, 1.2),
+        ("body_y", 0.0, 0.35), ("l_hip", 0, 0.35), ("r_hip", 0, 0.35),
+        ("l_knee", 0, 0.35), ("r_knee", 0, 0.35),
+        ("l_shoulder_pitch", 0, 0.35), ("r_shoulder_pitch", 0, 0.35),
+        ("head_tilt", 0, 0.20),
+    ],
+    "jump": [
+        ("body_y", -0.04, 0.15), ("l_knee", 35, 0.15), ("r_knee", 35, 0.15),
+        ("body_y", 0.18, 0.22), ("l_shoulder_pitch", 130, 0.22), ("r_shoulder_pitch", 130, 0.22),
+        ("l_knee", 10, 0.20), ("r_knee", 10, 0.20),
+        ("body_y", 0.0, 0.20), ("l_knee", 25, 0.15), ("r_knee", 25, 0.15),
+        ("l_shoulder_pitch", 0, 0.25), ("r_shoulder_pitch", 0, 0.25),
+        ("l_knee", 0, 0.20), ("r_knee", 0, 0.20),
+    ],
+    "climb": [
+        ("body_y", 0.05, 0.25), ("l_hip", 60, 0.25), ("l_knee", 60, 0.25),
+        ("l_shoulder_pitch", 80, 0.25), ("r_shoulder_pitch", 80, 0.25),
+        ("body_y", 0.14, 0.30), ("r_hip", 60, 0.25), ("r_knee", 60, 0.25),
+        ("body_y", 0.22, 0.35), ("l_hip", 0, 0.25), ("r_hip", 0, 0.25),
+        ("l_knee", 0, 0.25), ("r_knee", 0, 0.25),
+        ("l_shoulder_pitch", 0, 0.25), ("r_shoulder_pitch", 0, 0.25),
+        ("head_pan", -15, 0.20), ("head_pan", 15, 0.20), ("head_pan", 0, 0.20),
+        ("body_y", 0.0, 0.30),
     ],
 }
 
@@ -280,7 +329,7 @@ class AriaSim:
             self._ack(cid, "done")
             return
 
-        if action in ("wave", "nod", "shake_head", "dance", "gesture"):
+        if action in ("wave", "nod", "shake_head", "dance", "gesture", "sit", "jump", "climb"):
             name = params.get("name", action) if action == "gesture" else action
             self._start_gesture(name)
             return

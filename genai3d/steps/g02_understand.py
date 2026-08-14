@@ -59,16 +59,100 @@ def _guess_placement(label: str, dims) -> str:
     return "floor"
 
 
+
+# Canonical Kenney model registry labels — must match frontend/src/three/models/registry.ts
+_KENNEY_LABELS = {
+    "table", "chair", "sofa", "shelf", "potted_plant", "rug", "tv", "lamp",
+    "desk", "bed", "bench", "stool", "fridge", "side_table", "laptop", "book",
+    "trashcan", "cabinet",
+}
+
+# Synonym → canonical Kenney label mapping (extend freely)
+_LABEL_SYNONYMS: dict[str, str] = {
+    # sofa / couch
+    "couch": "sofa", "settee": "sofa", "loveseat": "sofa", "sectional": "sofa",
+    "lounge": "sofa", "chesterfield": "sofa",
+    # chair
+    "armchair": "chair", "seat": "chair", "stool": "chair", "recliner": "chair",
+    "throne": "chair", "rocker": "chair", "rocking": "chair",
+    # table
+    "dining": "table", "coffee": "table", "dinner": "table", "kitchen": "table",
+    "end": "side_table", "nightstand": "side_table",
+    # lamp / light
+    "floor_lamp": "lamp", "light": "lamp", "lantern": "lamp", "floor": "lamp",
+    "torchiere": "lamp", "chandelier": "lamp",
+    # shelf / bookcase
+    "bookcase": "shelf", "bookshelf": "shelf", "shelving": "shelf",
+    "shelves": "shelf", "rack": "shelf",
+    # bed
+    "mattress": "bed", "bunk": "bed", "cot": "bed", "futon": "bed",
+    # tv / screen
+    "television": "tv", "monitor": "tv", "screen": "tv", "display": "tv",
+    "telly": "tv",
+    # plant
+    "plant": "potted_plant", "flower": "potted_plant", "tree": "potted_plant",
+    "succulent": "potted_plant", "cactus": "potted_plant", "fern": "potted_plant",
+    "pot": "potted_plant",
+    # rug / carpet
+    "carpet": "rug", "mat": "rug", "runner": "rug",
+    # fridge
+    "refrigerator": "fridge", "freezer": "fridge",
+    # desk
+    "workdesk": "desk", "writing": "desk", "office": "desk",
+    # cabinet
+    "dresser": "cabinet", "wardrobe": "cabinet", "cupboard": "cabinet",
+    "closet": "cabinet", "drawers": "cabinet",
+    # bench
+    "ottoman": "bench", "footstool": "bench",
+    # laptop / computer
+    "computer": "laptop", "notebook": "laptop", "macbook": "laptop",
+    "chromebook": "laptop",
+    # book
+    "books": "book", "novel": "book", "textbook": "book", "magazine": "book",
+    # trash / bin
+    "bin": "trashcan", "trash": "trashcan", "garbage": "trashcan",
+    "waste": "trashcan", "dustbin": "trashcan",
+}
+
+
 def _label_from_hint(hint: str) -> str:
-    """Best-effort noun from the user's hint, for the offline path."""
+    """Map the user's hint text to the nearest Kenney registry label.
+
+    Tries each word against the synonym table and the canonical label set.
+    Falls back to the raw head noun if nothing matches, which still gives the
+    prior-table a reasonable size estimate even if the frontend falls back to
+    a grey box.
+    """
     words = re.findall(r"[a-z]+", (hint or "").lower())
     stop = {"a", "an", "the", "my", "this", "that", "small", "big", "large",
-            "tall", "short", "nice", "new", "old", "of", "with", "and"}
+            "tall", "short", "nice", "new", "old", "of", "with", "and",
+            "wooden", "metal", "white", "black", "brown", "red", "blue",
+            "green", "grey", "gray", "modern", "vintage", "please", "add"}
     words = [w for w in words if w not in stop]
     if not words:
         return "object"
-    # prior_dims already tries the head noun, so the last word is a good guess
+
+    # 1. Check every word directly against the canonical label set
+    for w in words:
+        if w in _KENNEY_LABELS:
+            return w
+
+    # 2. Check every word against the synonym table
+    for w in words:
+        if w in _LABEL_SYNONYMS:
+            return _LABEL_SYNONYMS[w]
+
+    # 3. Try compound words (e.g. "floor lamp" -> "floor_lamp" -> "lamp")
+    for i in range(len(words) - 1):
+        compound = f"{words[i]}_{words[i + 1]}"
+        if compound in _KENNEY_LABELS:
+            return compound
+        if compound in _LABEL_SYNONYMS:
+            return _LABEL_SYNONYMS[compound]
+
+    # 4. Fall back to raw head noun (last non-stop word)
     return "_".join(words[-2:]) if len(words) > 1 else words[-1]
+
 
 
 def _validate(raw: dict, hint: str) -> dict | None:
