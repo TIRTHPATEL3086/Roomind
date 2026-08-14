@@ -1,6 +1,6 @@
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { useRobotStore, type RobotState } from "../store/robotStore";
@@ -48,52 +48,7 @@ function WhiteMat({ metalness = 0.22, roughness = 0.28 }: { metalness?: number; 
   return <meshStandardMaterial color={WHITE} metalness={metalness} roughness={roughness} />;
 }
 
-// ── One leg: hip ball → thigh → knee ball → shin → foot ──────────────────────
-function Leg({ side, hipPitch = 0, kneeBend = 0 }: { side: "l" | "r"; hipPitch?: number; kneeBend?: number }) {
-  const sign = side === "r" ? 1 : -1;
-  return (
-    <group position={[sign * LEG_X, HIP_Y, 0]}>
-      {/* hip joint pitch */}
-      <group rotation={[-hipPitch * DEG, 0, 0]}>
-        {/* hip ball */}
-        <mesh>
-          <sphereGeometry args={[0.034, 14, 14]} />
-          <meshStandardMaterial color={LIGHT_GREY} metalness={0.3} roughness={0.4} />
-        </mesh>
-        {/* thigh */}
-        <mesh castShadow position={[0, -THIGH_H / 2, 0]}>
-          <capsuleGeometry args={[0.030, THIGH_H - 0.02, 6, 12]} />
-          <WhiteMat />
-        </mesh>
-        {/* knee joint */}
-        <group position={[0, -THIGH_H, 0]} rotation={[kneeBend * DEG, 0, 0]}>
-          {/* knee ball */}
-          <mesh>
-            <sphereGeometry args={[0.026, 12, 12]} />
-            <meshStandardMaterial color={MID_GREY} metalness={0.4} roughness={0.45} />
-          </mesh>
-          {/* shin */}
-          <mesh castShadow position={[0, -SHIN_H / 2, 0]}>
-            <capsuleGeometry args={[0.024, SHIN_H - 0.02, 6, 12]} />
-            <WhiteMat />
-          </mesh>
-          {/* foot */}
-          <group position={[0, -SHIN_H, 0]} rotation={[-kneeBend * DEG * 0.5, 0, 0]}>
-            <mesh castShadow receiveShadow position={[0.012, -FOOT_H / 2, 0]}>
-              <boxGeometry args={[0.078, FOOT_H, 0.055]} />
-              <WhiteMat metalness={0.2} roughness={0.35} />
-            </mesh>
-            {/* sole accent */}
-            <mesh position={[0.012, -FOOT_H + 0.003, 0]}>
-              <boxGeometry args={[0.080, 0.006, 0.057]} />
-              <meshStandardMaterial color={DARK_PANEL} metalness={0.5} roughness={0.3} />
-            </mesh>
-          </group>
-        </group>
-      </group>
-    </group>
-  );
-}
+
 
 // ── One arm: shoulder ball → upper arm → elbow → forearm → hand glow ──────────
 function Arm({
@@ -140,36 +95,7 @@ function Arm({
   );
 }
 
-// ── Animated holographic platform ─────────────────────────────────────────────
-function Platform({ color }: { color: string }) {
-  const ring1 = useRef<THREE.Mesh>(null!);
-  const ring2 = useRef<THREE.Mesh>(null!);
-  useFrame((_, dt) => {
-    ring1.current.rotation.y += dt * 0.9;
-    ring2.current.rotation.y -= dt * 0.55;
-  });
-  return (
-    <group position={[0, -0.005, 0]}>
-      <mesh receiveShadow>
-        <cylinderGeometry args={[0.22, 0.245, 0.018, 42]} />
-        <meshStandardMaterial color={DARK_PANEL} metalness={0.7} roughness={0.25} />
-      </mesh>
-      <mesh position={[0, 0.011, 0]}>
-        <torusGeometry args={[0.18, 0.006, 8, 52]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} toneMapped={false} />
-      </mesh>
-      <mesh ref={ring1} position={[0, 0.013, 0]}>
-        <torusGeometry args={[0.21, 0.003, 6, 56]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.2} toneMapped={false} />
-      </mesh>
-      <mesh ref={ring2} position={[0, 0.014, 0]}>
-        <torusGeometry args={[0.216, 0.002, 6, 56]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.5} toneMapped={false} />
-      </mesh>
-      <pointLight color={color} intensity={1.1} distance={0.8} position={[0, 0.04, 0]} />
-    </group>
-  );
-}
+
 
 // ── Main avatar ───────────────────────────────────────────────────────────────
 export function RobotAvatar({ robot }: { robot: RobotState }) {
@@ -183,41 +109,81 @@ export function RobotAvatar({ robot }: { robot: RobotState }) {
   const idleT     = useRef(0);
 
   // Smoothed joint values — never trigger a React render.
-  const j = useRef({ ...robot.joints });
+  // Initialized with REST_JOINTS keys; new sim keys (l_hip, l_knee, body_y, etc.)
+  // are seeded lazily on first telemetry receipt so they interpolate from the start.
+  const j = useRef<Record<string, number>>({ ...(robot.joints as Record<string, number>) });
 
-  useEffect(() => {
-    targetPos.current.set(robot.pose.x, robot.pose.y, robot.pose.z);
-    targetYaw.current = robot.pose.yaw;
-  }, [robot.pose]);
+  // Track latest robot prop in a ref so useFrame always reads fresh values
+  // without being a stale closure — avoids the React/R3F re-subscription gap.
+  const robotRef = useRef(robot);
+  robotRef.current = robot;
 
   const color    = EMOTION_COLOR[robot.emotion] ?? robot.accent_color;
   const eyeColor = useMemo(() => new THREE.Color(color), [color]);
 
+  const leftLegHip = useRef<THREE.Group>(null!);
+  const leftLegKnee = useRef<THREE.Group>(null!);
+  const rightLegHip = useRef<THREE.Group>(null!);
+  const rightLegKnee = useRef<THREE.Group>(null!);
+
   useFrame((_, dt) => {
+    const r = robotRef.current;
     // Frame-rate-independent lerp (spec 13.4). Telemetry is 10 Hz, render at 60 — interpolate.
     const k = 1 - Math.exp(-10 * dt);
     idleT.current += dt;
 
-    root.current.position.lerp(targetPos.current, k);
-    root.current.rotation.y += shortestAngle(root.current.rotation.y, targetYaw.current) * k;
+    // Update pose target every frame (no useEffect lag)
+    targetPos.current.set(r.pose.x, r.pose.y, r.pose.z);
+    targetYaw.current = r.pose.yaw;
 
-    // Idle breathing + animated joint elevations
-    if (bodyBob.current) {
-      const baseElevation = (j.current.body_y ?? 0);
-      bodyBob.current.position.y = baseElevation + Math.sin(idleT.current * 1.4) * 0.005;
+    const t = r.joints as Record<string, number>;
+    const jCur = j.current;
+
+    // Seed any NEW joint keys arriving from telemetry (e.g. l_hip, l_knee, r_hip,
+    // r_knee, body_y) that weren't in the initial REST_JOINTS.
+    for (const key of Object.keys(t)) {
+      if (!(key in jCur)) {
+        jCur[key] = t[key]; // start from the live value, not zero
+      }
     }
 
-    const t = robot.joints;
-    for (const key of Object.keys(j.current) as (keyof typeof t)[]) {
-      j.current[key] += (t[key] - j.current[key]) * k;
+    // Smooth all known joints toward their telemetry targets.
+    for (const key of Object.keys(jCur)) {
+      if (t[key] !== undefined) {
+        jCur[key] += (t[key] - jCur[key]) * k;
+      }
+    }
+
+    const baseElevation = jCur.body_y ?? 0;
+    const elevatedPos = targetPos.current.clone();
+    elevatedPos.y += baseElevation;
+
+    root.current.position.lerp(elevatedPos, k);
+    root.current.rotation.y += shortestAngle(root.current.rotation.y, targetYaw.current) * k;
+
+    // Idle breathing bob
+    if (bodyBob.current) {
+      bodyBob.current.position.y = Math.sin(idleT.current * 1.4) * 0.005;
     }
 
     if (head.current) {
-      head.current.rotation.y = (j.current.head_pan ?? 0) * DEG;
-      head.current.rotation.x = -(j.current.head_tilt ?? 0) * DEG;
+      head.current.rotation.y = (jCur.head_pan ?? 0) * DEG;
+      head.current.rotation.x = -(jCur.head_tilt ?? 0) * DEG;
     }
     if (waist.current) {
-      waist.current.rotation.y = (j.current.waist_yaw ?? 0) * DEG;
+      waist.current.rotation.y = (jCur.waist_yaw ?? 0) * DEG;
+    }
+    if (leftLegHip.current) {
+      leftLegHip.current.rotation.x = -(jCur.l_hip ?? 0) * DEG;
+    }
+    if (leftLegKnee.current) {
+      leftLegKnee.current.rotation.x = (jCur.l_knee ?? 0) * DEG;
+    }
+    if (rightLegHip.current) {
+      rightLegHip.current.rotation.x = -(jCur.r_hip ?? 0) * DEG;
+    }
+    if (rightLegKnee.current) {
+      rightLegKnee.current.rotation.x = (jCur.r_knee ?? 0) * DEG;
     }
   });
 
@@ -229,8 +195,73 @@ export function RobotAvatar({ robot }: { robot: RobotState }) {
       <group ref={bodyBob}>
 
         {/* ── LEGS — with dynamic hip and knee articulation */}
-        <Leg side="l" hipPitch={j.current.l_hip ?? 0} kneeBend={j.current.l_knee ?? 0} />
-        <Leg side="r" hipPitch={j.current.r_hip ?? 0} kneeBend={j.current.r_knee ?? 0} />
+        {/* Left leg */}
+        <group position={[-LEG_X, HIP_Y, 0]}>
+          <group ref={leftLegHip}>
+            <mesh>
+              <sphereGeometry args={[0.034, 14, 14]} />
+              <meshStandardMaterial color={LIGHT_GREY} metalness={0.3} roughness={0.4} />
+            </mesh>
+            <mesh castShadow position={[0, -THIGH_H / 2, 0]}>
+              <capsuleGeometry args={[0.030, THIGH_H - 0.02, 6, 12]} />
+              <WhiteMat />
+            </mesh>
+            <group ref={leftLegKnee} position={[0, -THIGH_H, 0]}>
+              <mesh>
+                <sphereGeometry args={[0.026, 12, 12]} />
+                <meshStandardMaterial color={MID_GREY} metalness={0.4} roughness={0.45} />
+              </mesh>
+              <mesh castShadow position={[0, -SHIN_H / 2, 0]}>
+                <capsuleGeometry args={[0.024, SHIN_H - 0.02, 6, 12]} />
+                <WhiteMat />
+              </mesh>
+              <group position={[0, -SHIN_H, 0]}>
+                <mesh castShadow receiveShadow position={[0.012, -FOOT_H / 2, 0]}>
+                  <boxGeometry args={[0.078, FOOT_H, 0.055]} />
+                  <WhiteMat metalness={0.2} roughness={0.35} />
+                </mesh>
+                <mesh position={[0.012, -FOOT_H + 0.003, 0]}>
+                  <boxGeometry args={[0.080, 0.006, 0.057]} />
+                  <meshStandardMaterial color={DARK_PANEL} metalness={0.5} roughness={0.3} />
+                </mesh>
+              </group>
+            </group>
+          </group>
+        </group>
+
+        {/* Right leg */}
+        <group position={[LEG_X, HIP_Y, 0]}>
+          <group ref={rightLegHip}>
+            <mesh>
+              <sphereGeometry args={[0.034, 14, 14]} />
+              <meshStandardMaterial color={LIGHT_GREY} metalness={0.3} roughness={0.4} />
+            </mesh>
+            <mesh castShadow position={[0, -THIGH_H / 2, 0]}>
+              <capsuleGeometry args={[0.030, THIGH_H - 0.02, 6, 12]} />
+              <WhiteMat />
+            </mesh>
+            <group ref={rightLegKnee} position={[0, -THIGH_H, 0]}>
+              <mesh>
+                <sphereGeometry args={[0.026, 12, 12]} />
+                <meshStandardMaterial color={MID_GREY} metalness={0.4} roughness={0.45} />
+              </mesh>
+              <mesh castShadow position={[0, -SHIN_H / 2, 0]}>
+                <capsuleGeometry args={[0.024, SHIN_H - 0.02, 6, 12]} />
+                <WhiteMat />
+              </mesh>
+              <group position={[0, -SHIN_H, 0]}>
+                <mesh castShadow receiveShadow position={[0.012, -FOOT_H / 2, 0]}>
+                  <boxGeometry args={[0.078, FOOT_H, 0.055]} />
+                  <WhiteMat metalness={0.2} roughness={0.35} />
+                </mesh>
+                <mesh position={[0.012, -FOOT_H + 0.003, 0]}>
+                  <boxGeometry args={[0.080, 0.006, 0.057]} />
+                  <meshStandardMaterial color={DARK_PANEL} metalness={0.5} roughness={0.3} />
+                </mesh>
+              </group>
+            </group>
+          </group>
+        </group>
 
         {/* ── WAIST + TORSO + ARMS + HEAD */}
         <group ref={waist}>
