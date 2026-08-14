@@ -51,14 +51,14 @@ ACTION_HANDLERS: dict[str, str] = {
     "gesture": "_do_simple",
     "express": "_do_simple",
     "dance": "_do_simple",
+    "sit": "_do_simple",
+    "jump": "_do_simple",
+    "climb": "_do_simple",
     "scan_area": "_do_simple",
     "remember_spot": "_do_simple",
     "photo": "_do_simple",
     "report_battery": "_do_simple",
     "imagine": "_do_imagine",
-    "sit": "_do_simple",
-    "jump": "_do_simple",
-    "climb": "_do_climb",
 }
 
 
