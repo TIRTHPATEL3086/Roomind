@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roommind.dev/schemas/telemetry.json",
+  "title": "RoomMind Telemetry",
+  "type": "object",
+  "required": ["robot_id", "ts", "pose", "state"],
+  "properties": {
+    "robot_id": { "type": "string" },
+    "ts":       { "type": "number", "description": "unix epoch seconds, float" },
+    "seq":      { "type": "integer" },
+    "pose": {
+      "type": "object",
+      "required": ["x", "y", "z", "yaw"],
+      "properties": {
+        "x": { "type": "number" }, "y": { "type": "number" },
+        "z": { "type": "number" }, "yaw": { "type": "number" }
+      }
+    },
+    "vel": {
+      "type": "object",
+      "properties": { "linear": { "type": "number" }, "angular": { "type": "number" } }
+    },
+    "joints": {
+      "type": "object",
+      "description": "current joint angles in degrees (8.3.2). Drives the virtual twin's pose.",
+      "properties": {
+        "head_pan":  { "type": "number" },
+        "head_tilt": { "type": "number" },
+        "waist_yaw": { "type": "number" },
+        "l_shoulder_pitch": { "type": "number" },
+        "l_shoulder_roll":  { "type": "number" },
+        "l_elbow":          { "type": "number" },
+        "r_shoulder_pitch": { "type": "number" },
+        "r_shoulder_roll":  { "type": "number" },
+        "r_elbow":          { "type": "number" }
+      }
+    },
+    "emotion": { "type": "string", "enum": ["neutral", "happy", "curious", "confused", "alert"] },
+    "state": {
+      "type": "string",
+      "enum": ["idle", "driving", "turning", "gesturing", "looking", "pointing",
+               "presenting", "dancing", "charging", "error", "estop"]
+    },
+    "battery":  { "type": "number", "minimum": 0, "maximum": 1 },
+    "current_command_id": { "type": ["string", "null"] },
+    "progress": { "type": "number", "minimum": 0, "maximum": 1 },
+    "sensors": {
+      "type": "object",
+      "properties": {
+        "ultrasonic_cm": { "type": "array", "items": { "type": "number" } },
+        "ir":            { "type": "array", "items": { "type": "boolean" } },
+        "imu": {
+          "type": "object",
+          "properties": {
+            "roll":  { "type": "number" }, "pitch": { "type": "number" },
+            "yaw":   { "type": "number" }, "ax":    { "type": "number" },
+            "ay":    { "type": "number" }, "az":    { "type": "number" }
+          }
+        },
+        "encoders": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

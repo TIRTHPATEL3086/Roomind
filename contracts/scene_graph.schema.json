@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roommind.dev/schemas/scene_graph.json",
+  "title": "RoomMind Scene Graph",
+  "type": "object",
+  "required": ["room_id", "version", "units", "bounds", "floor_y", "objects", "robot_dock"],
+  "properties": {
+    "room_id":  { "type": "string" },
+    "version":  { "type": "string", "const": "1.0" },
+    "name":     { "type": "string" },
+    "units":    { "type": "string", "const": "meters" },
+    "up_axis":  { "type": "string", "const": "Y" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "bounds": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+        "max": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+      }
+    },
+    "floor_y": { "type": "number" },
+    "mesh": {
+      "type": "object",
+      "properties": {
+        "url":        { "type": "string" },
+        "format":     { "type": "string", "enum": ["glb", "gltf"] },
+        "draco":      { "type": "boolean" },
+        "tri_count":  { "type": "integer" },
+        "size_bytes": { "type": "integer" }
+      }
+    },
+    "navmesh": {
+      "type": "object",
+      "properties": {
+        "url":        { "type": "string" },
+        "resolution": { "type": "number", "description": "metres per cell, e.g. 0.05" },
+        "origin":     { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+        "width":      { "type": "integer" },
+        "height":     { "type": "integer" }
+      }
+    },
+    "robot_dock": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "position", "dimensions"],
+        "properties": {
+          "id":         { "type": "string", "pattern": "^[a-z_]+_[0-9]{2}$" },
+          "label":      { "type": "string" },
+          "position":   { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "dimensions": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "rotation_y": { "type": "number", "default": 0 },
+          "color":      { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "is_obstacle":{ "type": "boolean", "default": true },
+          "is_climbable":{ "type": "boolean", "default": false },
+          "surface_height": { "type": "number", "description": "top Y - a usable flat surface to place things on" },
+          "source":     { "type": "string", "enum": ["detected", "generated", "manual"], "default": "detected" },
+          "mesh_url":   { "type": "string", "description": "per-object .glb - set for source=generated (10B)" },
+          "origin_image": { "type": "string", "description": "thumbnail of the source image, generated objects only" },
+          "scale_confidence": {
+            "type": "number", "minimum": 0, "maximum": 1,
+            "description": "how sure we are of the metric size - LOW means ask the user (10B.5)"
+          },
+          "attributes": {
+            "type": "object",
+            "description": "Instance-level facts used to tell two objects of the same class apart. Deliberately open: unknown keys are allowed, but every key named here has a fixed meaning.",
+            "properties": {
+              "class": {
+                "type": "string",
+                "description": "canonical semantic category. `label` is the display name and `class` is what the resolver matches on; they are equal unless a detector emitted a compound label."
+              },
+              "instance_index": {
+                "type": "integer", "minimum": 1,
+                "description": "the NN in the id. 'chair number 3' resolves through this."
+              },
+              "label_source": {
+                "type": "string",
+                "enum": ["yolo", "size_prior", "fixture", "generated", "manual"],
+                "description": "HOW the class was decided. 'size_prior' is a guess from dimensions, not recognition - never present it as one."
+              },
+              "label_confidence": {
+                "type": "number", "minimum": 0, "maximum": 1,
+                "description": "confidence in the CLASS specifically, separate from the object-level detection confidence"
+              },
+              "detector": { "type": "string", "enum": ["yolo", "geometric", "fusion", "none"] },
+              "votes": {
+                "type": "integer", "minimum": 0,
+                "description": "how many independent views agreed this object exists"
+              },
+              "uncertain": {
+                "type": "boolean",
+                "description": "below the confidence threshold - the resolver must confirm before navigating to it"
+              },
+              "color": {
+                "type": "object",
+                "description": "colour NAME derived from the measured pixels. Absent when no colour was measured - never guessed.",
+                "required": ["value", "confidence"],
+                "properties": {
+                  "value": { "type": "string", "description": "e.g. red, black, grey. 'unknown' when measured but not nameable." },
+                  "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+                  "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+                }
+              },
+              "size_class": {
+                "type": "string",
+                "enum": ["small", "medium", "large"],
+                "description": "volume relative to the other instances of the SAME class in this room. Absent when the class has only one instance, because 'the large chair' means nothing then."
+              },
+              "relations": {
+                "type": "array",
+                "description": "this object's outgoing spatial relations, nearest first",
+                "items": { "$ref": "#/$defs/relation" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "description": "Whole-room spatial relation layer, derived from geometry (spec 8.1 frame). Deterministic: the resolver filters on this rather than asking a model where things are.",
+      "items": { "$ref": "#/$defs/room_relation" }
+    },
+    "waypoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "position"],
+        "properties": {
+          "name":     { "type": "string" },
+          "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "relation": {
+      "type": "object",
+      "required": ["rel", "to"],
+      "properties": {
+        "rel": {
+          "type": "string",
+          "enum": ["near", "far", "beside", "next_to", "left_of", "right_of",
+                   "in_front_of", "behind", "on", "under"],
+          "description": "left/right/front/behind are measured in the ROOM frame of spec 8.1 (facing +Z, right is +X). Egocentric left/right is resolved at query time from ARIA's live pose and is deliberately NOT baked in here."
+        },
+        "to": { "type": "string", "pattern": "^[a-z_]+_[0-9]{2}$" },
+        "distance_m": {
+          "type": "number", "minimum": 0,
+          "description": "gap between the two oriented boxes, not between their centres. Zero means they touch."
+        }
+      }
+    },
+    "room_relation": {
+      "type": "object",
+      "required": ["from", "rel", "to"],
+      "properties": {
+        "from": { "type": "string", "pattern": "^[a-z_]+_[0-9]{2}$" },
+        "rel": {
+          "type": "string",
+          "enum": ["near", "far", "beside", "next_to", "left_of", "right_of",
+                   "in_front_of", "behind", "on", "under"]
+        },
+        "to": { "type": "string", "pattern": "^[a-z_]+_[0-9]{2}$" },
+        "distance_m": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

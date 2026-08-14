@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: rm_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-roommind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roommind}
+      POSTGRES_DB: ${POSTGRES_DB:-roommind}
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roommind"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: rm_redis
+    ports: ["6379:6379"]
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: rm_mqtt
+    ports: ["1883:1883", "9001:9001"]
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqttdata:/mosquitto/data
+
+  chroma:
+    image: chromadb/chroma:0.5.5
+    container_name: rm_chroma
+    ports: ["8001:8000"]
+    volumes: [chromadata:/chroma/chroma]
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+
+  backend:
+    build: ./backend
+    container_name: rm_api
+    env_file: .env
+    depends_on: [postgres, redis, mosquitto, chroma]
+    ports: ["8000:8000"]
+    volumes:
+      - ./backend:/app
+      - ./ml/models:/models:ro
+      - ./storage:/app/storage
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    profiles: ["full"]
+
+volumes:
+  pgdata:
+  redisdata:
+  mqttdata:
+  chromadata:

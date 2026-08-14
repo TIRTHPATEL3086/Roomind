@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens (spec 13.1). Mirrored in tailwind.config.js so both CSS and
+   utility classes read from one definition. */
+:root {
+  --rm-base: #0b1020;
+  --rm-surface: rgba(17, 24, 39, 0.55);
+  --rm-border: rgba(255, 255, 255, 0.08);
+  --rm-text: #e5e7eb;
+  --rm-text-muted: #9ca3af;
+  --rm-aria: #3b82f6;
+  --rm-glow: #22d3ee;
+  --rm-generated: #a78bfa;
+  --rm-danger: #ef4444;
+  --rm-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --rm-blur: 18px;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    background: var(--rm-base);
+    color: var(--rm-text);
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scrolling is route-driven, set via data-route on <html> by App.tsx.
+     Doing this in CSS rather than by poking body.style avoids the classic bug
+     where clearing an inline style falls back to a `hidden` rule and the
+     landing silently stops scrolling. */
+  html[data-route="app"],
+  html[data-route="app"] body,
+  html[data-route="app"] #root {
+    height: 100%;
+    /* /app NEVER scrolls (spec P2 item 8). The 3D world owns the viewport;
+       a scrollbar here means a layout bug, not content. */
+    overflow: hidden;
+  }
+
+  html[data-route="landing"],
+  html[data-route="landing"] body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  ::selection {
+    background: rgba(59, 130, 246, 0.35);
+  }
+}
+
+@layer components {
+  /* The glass surface from spec 13.1 - one definition, used by <Panel>. */
+  .rm-glass {
+    background: var(--rm-surface);
+    backdrop-filter: blur(var(--rm-blur));
+    -webkit-backdrop-filter: blur(var(--rm-blur));
+    border: 1px solid var(--rm-border);
+    box-shadow: var(--rm-shadow);
+    border-radius: 16px;
+  }
+
+  /* Scroll-reveal for the long-form landing content.
+
+     Deliberately CSS + IntersectionObserver rather than more ScrollTriggers.
+     ScrollTrigger earns its cost when an animation is SCRUBBED to scroll
+     position; these are one-shot fades, which is exactly what
+     IntersectionObserver is for. It also keeps the landing inside its budget
+     of 8 ScrollTriggers (spec 13.9) — a dozen content sections would blow
+     through it on their own.
+
+     FAIL-SAFE: the hidden state only applies under [data-reveal-armed], which
+     the hook sets on the container at mount. If JS never runs, or throws, the
+     content is simply visible rather than permanently invisible. */
+  [data-reveal] {
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  [data-reveal-armed] [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  [data-reveal-armed] [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .rm-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
+  .rm-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .rm-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+  }
+  .rm-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Respect the OS setting everywhere, not just on the Phase 4 landing. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Reveals must land VISIBLE, not instantly-transitioned-to-hidden. Killing
+     the transition alone would leave the opacity:0 start state in place and
+     hide half the page. */
+  [data-reveal-armed] [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

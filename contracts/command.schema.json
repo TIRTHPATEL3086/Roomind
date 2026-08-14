@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roommind.dev/schemas/command.json",
+  "title": "RoomMind Command",
+  "type": "object",
+  "required": ["action"],
+  "properties": {
+    "id":       { "type": "string" },
+    "action": {
+      "type": "string",
+      "enum": [
+        "navigate", "come_here", "stop", "follow_me", "dock", "turn", "set_speed",
+        "look_at", "point_at", "wave", "nod", "shake_head", "gesture", "express", "dance",
+        "scan_area", "remember_spot", "locate", "photo", "report_battery",
+        "present", "imagine"
+      ]
+    },
+    "target":   { "type": "string", "description": "object id or waypoint name" },
+    "params":   { "type": "object" },
+    "robot_id": { "type": "string", "enum": ["aria"], "default": "aria" },
+    "priority": { "type": "integer", "minimum": 0, "maximum": 10, "default": 5 },
+    "seq":      { "type": "integer", "description": "monotonic per robot" },
+    "issued_at":{ "type": "string", "format": "date-time" }
+  }
+}

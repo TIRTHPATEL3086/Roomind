@@ -1,0 +1,26 @@
+[console_scripts]
+amqtt = amqtt.scripts.broker_script:main
+amqtt_pub = amqtt.scripts.pub_script:main
+amqtt_sub = amqtt.scripts.sub_script:main
+ca_creds = amqtt.scripts.ca_creds:main
+device_creds = amqtt.scripts.device_creds:main
+server_creds = amqtt.scripts.server_creds:main
+topic_mgr = amqtt.scripts.manage_topics:main
+user_mgr = amqtt.scripts.manage_users:main
+
+[amqtt.broker.plugins]
+auth_anonymous = amqtt.plugins.authentication:AnonymousAuthPlugin
+auth_file = amqtt.plugins.authentication:FileAuthPlugin
+broker_sys = amqtt.plugins.sys.broker:BrokerSysPlugin
+event_logger_plugin = amqtt.plugins.logging_amqtt:EventLoggerPlugin
+packet_logger_plugin = amqtt.plugins.logging_amqtt:PacketLoggerPlugin
+topic_acl = amqtt.plugins.topic_checking:TopicAccessControlListPlugin
+topic_taboo = amqtt.plugins.topic_checking:TopicTabooPlugin
+
+[amqtt.client.plugins]
+packet_logger_plugin = amqtt.plugins.logging_amqtt:PacketLoggerPlugin
+
+[amqtt.test.plugins]
+event_plugin = tests.plugins.test_manager:EventTestPlugin
+packet_logger_plugin = amqtt.plugins.logging_amqtt:PacketLoggerPlugin
+test_plugin = tests.plugins.test_manager:EmptyTestPlugin

@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(reconstruction/.venv/Scripts/python.exe -c \"import ultralytics, torch; print\\('ultralytics', ultralytics.__version__\\); print\\('torch', torch.__version__\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 8 https://ultralytics.com/images/bus.jpg)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 8 https://pypi.org/simple/)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_resolver.py -q)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_resolver.py)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_nl_api.py)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_recognition.py)",
+      "Bash(backend/.venv/Scripts/python.exe scripts/accept_phase6.py)",
+      "Bash(curl -sL --max-time 30 -o bus.jpg \"https://ultralytics.com/images/bus.jpg\")",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_nl_api.py -q)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(curl -s --max-time 5 http://127.0.0.1:8000/api/v1/robots/aria)",
+      "Bash(backend/.venv/Scripts/python.exe __TRACKED_VAR__/live_demo.py)",
+      "Bash(backend/.venv/Scripts/python.exe scripts/accept_phase6.py --with-api)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/v1/commands -H \"Content-Type: application/json\" -d '{\"action\":\"point_at\",\"target\":\"lamp_01\"}')",
+      "Bash(backend/.venv/Scripts/python.exe -c ' *)",
+      "Bash(curl -s --max-time 5 \"http://127.0.0.1:8000/api/v1/rooms/demo_room\")",
+      "Bash(backend/.venv/Scripts/python.exe scripts/accept_phase3b.py)",
+      "Bash(curl -s --max-time 10 -X POST http://127.0.0.1:8000/api/v1/chat -H \"Content-Type: application/json\" -d '{\"room_id\":\"demo_room\",\"message\":\"where'\"'\"'s the floor lamp?\"}')",
+      "Bash(curl -s --max-time 5 http://127.0.0.1:8000/api/v1/rooms/demo_room)",
+      "Bash(backend/.venv/Scripts/python.exe scripts/accept_phase4.py)",
+      "Bash(curl -s --max-time 5 http://127.0.0.1:8000/api/v1/health)",
+      "Bash(backend/.venv/Scripts/python.exe -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('online',d['online'],'battery',round\\(d['battery'],2\\),'state',d['state']\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 4 http://127.0.0.1:5173/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 6 http://localhost:5173/)",
+      "Bash(curl -s --max-time 6 http://localhost:5173/api/v1/rooms)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 8 http://127.0.0.1:5173/)",
+      "Bash(curl -s --max-time 8 http://127.0.0.1:5173/api/v1/rooms)",
+      "Bash(curl -s --max-time 8 http://127.0.0.1:5173/api/v1/detector)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(curl -s -o /dev/null -w \"app HTTP %{http_code}\\\\n\" --max-time 8 http://127.0.0.1:5173/)"
+    ]
+  }
+}

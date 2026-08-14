@@ -1,0 +1,36 @@
+# Dev MQTT broker (amqtt) - a pip-installable stand-in for Mosquitto.
+#
+# Why: Mosquitto needs an elevated installer, and this machine has no winget and
+# no admin shell. amqtt speaks MQTT 3.1.1, which is what paho and the spec's
+# contract use, so contracts/mqtt_topics.md is unchanged.
+#
+# For the demo/production path, swap to the Mosquitto container in
+# docker-compose.yml - nothing in the application code changes.
+#
+# NOTE: amqtt 0.11+ config keys use underscores, not hyphens.
+#
+# Run:  .broker-venv\Scripts\amqtt.exe -c infra\amqtt\broker.yaml
+
+listeners:
+  default:
+    type: tcp
+    bind: 0.0.0.0:1883
+    max_connections: 50
+  ws:
+    type: ws
+    bind: 0.0.0.0:9001
+    max_connections: 50
+
+timeout_disconnect_delay: 5
+
+# The $SYS stats plugin throws on startup if this is unset (None > 0). Harmless -
+# the listeners still come up - but it buries real errors in the log.
+sys_interval: 20
+
+auth:
+  allow_anonymous: true
+  plugins:
+    - auth_anonymous
+
+topic_check:
+  enabled: false
