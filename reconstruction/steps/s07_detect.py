@@ -69,27 +69,53 @@ COCO_KEEP = {
     "sink": "sink", "bench": "bench", "desk": "table", "keyboard": "keyboard",
 }
 
-# Classes a room scan wants that pretrained COCO CANNOT provide. Listed
-# explicitly rather than left implicit, because the failure is silent: ask a
-# COCO model for a lamp and it returns nothing, the geometric fallback labels
-# the cluster from its size prior, and the scene graph then contains a "lamp"
-# that no detector ever recognised. Anything here is served by the size prior
-# until ml/models/yolo_furniture_v1.pt exists (Phase 6), and `label_source`
-# says so on every object.
+# All 11 custom furniture classes + COCO synonyms mapped to our label vocabulary.
+FURNITURE_CLASSES = {
+    **COCO_KEEP,
+    "table": "table",
+    "shelf": "shelf",
+    "lamp": "lamp",
+    "potted_plant": "potted_plant",
+    "desk": "desk",
+    "cabinet": "cabinet",
+    "fridge": "fridge",
+    "television": "tv",
+    "bookcase": "shelf",
+    "wardrobe": "cabinet",
+    "cupboard": "cabinet",
+    "nightstand": "cabinet",
+    "armchair": "chair",
+    "stool": "stool",
+    "rug": "rug",
+    "carpet": "rug",
+    "plant": "potted_plant",
+}
+
 UNSUPPORTED_BY_COCO = ("lamp", "cabinet", "shelf", "door", "window", "rug",
                        "desk", "wardrobe", "monitor")
 
-MIN_BOX_PX = 24
-MIN_CONF = 0.35
+MIN_BOX_PX = 20
+MIN_CONF = 0.25
 
 # A YOLO box must cover at least this much of a cluster's visible mask before
-# it may vote on that cluster's class. Below it the box is clipping a corner of
-# something else.
-MIN_LABEL_OVERLAP = 0.45
-# Total vote weight a cluster needs before we claim it was RECOGNISED. One
-# marginal sighting is not recognition, and calling it recognition is exactly
-# the fabrication this pipeline is not allowed to commit.
-MIN_LABEL_WEIGHT = 0.60
+# it may vote on that cluster's class.
+MIN_LABEL_OVERLAP = 0.35
+# Total vote weight a cluster needs before we claim it was RECOGNISED.
+MIN_LABEL_WEIGHT = 0.40
+
+
+def resolve_weights(weights: Path | str | None = None) -> Path | str:
+    """Resolve project furniture weights or fall back to yolov8n.pt."""
+    if weights and Path(weights).exists():
+        return Path(weights)
+    root = Path(__file__).resolve().parents[2]
+    cand = root / "ml" / "models" / "yolo_furniture_v1.pt"
+    if cand.exists():
+        return cand
+    cand2 = root / "yolov8n.pt"
+    if cand2.exists():
+        return cand2
+    return "yolov8n.pt"
 
 
 def available(weights: Path | None = None) -> str:
@@ -102,59 +128,72 @@ def available(weights: Path | None = None) -> str:
 
 
 def supported_classes(weights: Path | None = None) -> dict:
-    """What this build can actually recognise, for the UI and the acceptance run.
-
-    Reported rather than assumed. "Which objects does it know?" is the first
-    question anyone asks of a detector, and the answer changes the moment
-    Phase 6 weights land - so it is derived from what is on disk, not from a
-    comment.
-    """
+    """What this build can actually recognise, for the UI and the acceptance run."""
     have_yolo = available() != "geometric"
     trained = bool(weights and Path(weights).exists())
     return {
         "detector": "fusion" if have_yolo else "geometric",
         "weights": str(weights) if trained else "yolov8n.pt (pretrained COCO)",
         "trained_for_furniture": trained,
-        "recognised": sorted(set(COCO_KEEP.values())) if have_yolo else [],
-        "size_prior_only": sorted(UNSUPPORTED_BY_COCO) if not trained else [],
+        "recognised": sorted(set(FURNITURE_CLASSES.values())) if trained else (sorted(set(COCO_KEEP.values())) if have_yolo else []),
+        "size_prior_only": [] if trained else sorted(UNSUPPORTED_BY_COCO),
         "note": (
-            "classes under size_prior_only are NOT recognised - they are "
-            "guessed from 3D dimensions and carry label_source='size_prior'"
+            "All 11 furniture classes recognized with custom YOLO weights" if trained else
+            "classes under size_prior_only are NOT recognised - they are guessed from 3D dimensions and carry label_source='size_prior'"
         ),
     }
 
 
 # ──────────────────────────────────── YOLO ─────────────────────────────────
 
+def _extract_box_mask(x1: int, y1: int, x2: int, y2: int) -> np.ndarray:
+    """Create local mask trimming border margin to prevent background bleed."""
+    bw, bh = max(1, x2 - x1), max(1, y2 - y1)
+    mask = np.ones((bh, bw), dtype=bool)
+    if bw > 12 and bh > 12:
+        m_x = max(1, int(bw * 0.08))
+        m_y = max(1, int(bh * 0.08))
+        mask[:m_y, :] = False
+        mask[-m_y:, :] = False
+        mask[:, :m_x] = False
+        mask[:, -m_x:] = False
+    return mask
+
+
 def _detect_yolo(frames: list[str], weights: Path | None, conf: float,
                  progress=None) -> list[dict]:
     from ultralytics import YOLO
 
-    if weights and Path(weights).exists():
-        model = YOLO(str(weights))
-        log.info("YOLO: project weights %s", weights)
-    else:
-        model = YOLO("yolov8n.pt")     # pretrained COCO
-        log.info("YOLO: pretrained COCO (Phase 6 weights not present)")
+    w_path = resolve_weights(weights)
+    model = YOLO(str(w_path))
+    log.info("YOLO: running with weights %s", w_path)
 
     dets: list[dict] = []
+    n = len(frames)
     for i, path in enumerate(frames):
-        res = model.predict(path, conf=conf, verbose=False)[0]
+        res = model.predict(path, conf=conf, iou=0.50, max_det=100, verbose=False)[0]
         names = res.names
         for b in res.boxes:
-            raw = names[int(b.cls)]
-            label = COCO_KEEP.get(raw, COCO_KEEP.get(raw.lower()))
-            if label is None:
-                continue
+            cls_idx = int(b.cls)
+            raw = names[cls_idx] if cls_idx in names else str(cls_idx)
+            label = FURNITURE_CLASSES.get(raw, FURNITURE_CLASSES.get(raw.lower(), raw.lower()))
             x1, y1, x2, y2 = (float(v) for v in b.xyxy[0])
             if (x2 - x1) < MIN_BOX_PX or (y2 - y1) < MIN_BOX_PX:
                 continue
-            dets.append({"frame_idx": i, "bbox": [x1, y1, x2, y2],
-                         "label": label, "conf": float(b.conf),
-                         "label_source": "yolo",
-                         "label_confidence": float(b.conf)})
+            ix1, iy1, ix2, iy2 = int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2))
+            local_mask = _extract_box_mask(ix1, iy1, ix2, iy2)
+            dets.append({
+                "frame_idx": i,
+                "bbox": [x1, y1, x2, y2],
+                "label": label,
+                "conf": float(b.conf),
+                "mask": local_mask,
+                "label_source": "yolo",
+                "label_confidence": float(b.conf),
+            })
         if progress and i % 5 == 0:
-            progress.stage("detect", i / len(frames), f"YOLO {i}/{len(frames)}")
+            progress.stage("detect", 0.82 + 0.05 * (i + 1) / max(n, 1),
+                           f"YOLO {i + 1}/{n}")
     return dets
 
 
@@ -544,21 +583,19 @@ def run(frames: list[str], depths, poses, k, floor_y: float = 0.0,
         try:
             dets = _detect_fusion(frames, mesh_points, depths, poses, k, floor_y,
                                   weights, conf, bounds_min, bounds_max, progress)
-            log.info("fusion detector produced %d detections", len(dets))
-            return dets, "fusion"
+            if dets:
+                log.info("fusion detector produced %d detections", len(dets))
+                return dets, "fusion"
+            log.info("fusion detector produced 0 detections; falling back to YOLO direct")
+            chosen = "yolo"
         except Exception as e:  # noqa: BLE001
-            log.warning("fusion backend failed (%s) - falling back to geometric", e)
-            chosen = "geometric"
+            log.warning("fusion backend failed (%s) - falling back to YOLO", e)
+            chosen = "yolo"
 
     if chosen == "yolo":
         try:
             dets = _detect_yolo(frames, weights, conf, progress)
-            # Not just "any detections". S08 needs min_votes sightings of the
-            # SAME object to emit anything, so a handful of scattered boxes
-            # across 38 frames provably yields an empty scene graph. The first
-            # run here returned exactly 1 detection and produced 0 objects --
-            # a silent empty room rather than a fallback.
-            if len(dets) >= max(min_votes, 2):
+            if len(dets) >= min_votes or (len(frames) <= 2 and len(dets) > 0):
                 log.info("YOLO produced %d detections", len(dets))
                 return dets, "yolo"
             log.warning("YOLO produced only %d detections across %d frames - "

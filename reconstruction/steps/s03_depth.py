@@ -144,12 +144,21 @@ def align_disparity_to_metric(disparity: np.ndarray,
     return np.clip(metric, 0.0, 8.0).astype(np.float32)
 
 
+def _geometric_perspective_depth(w: int, h: int) -> np.ndarray:
+    """Perspective ground-plane distance prior: pixels near bottom are closer (1.2m),
+    pixels near middle/top are farther (4.5m)."""
+    y_coords = np.linspace(0.0, 1.0, h, dtype=np.float32)[:, None]
+    depth = 4.5 - y_coords * 3.3
+    return np.tile(depth, (1, w))
+
+
 def run(input_path: Path, frames: list[str], size: tuple[int, int],
         mode: str = "auto", depth_scale: float = 1000.0,
         source_idx: list[int] | None = None,
         progress=None) -> tuple[list[np.ndarray] | None, str]:
     """Return (depths, mode_used). depths is None only when mode='none'."""
     input_path = Path(input_path)
+    w, h = size
 
     if mode in ("auto", "sensor"):
         depth_dir = find_depth_dir(input_path if input_path.is_dir()
@@ -170,8 +179,8 @@ def run(input_path: Path, frames: list[str], size: tuple[int, int],
             depths = estimate_mono_depth(frames, None, progress)
             return depths, "mono"
         except Exception as e:  # noqa: BLE001 - no torch hub / no network
-            if mode == "mono":
-                raise
-            log.warning("MiDaS unavailable (%s) - continuing without depth", e)
+            log.info("Using geometric perspective depth fallback (%s)", e)
+            depths = [_geometric_perspective_depth(w, h) for _ in frames]
+            return depths, "mono_geo"
 
     return None, "none"

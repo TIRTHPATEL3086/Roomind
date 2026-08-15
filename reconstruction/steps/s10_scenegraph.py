@@ -61,6 +61,8 @@ SIZE_PRIORS: list[tuple[str, tuple[float, float, float], float]] = [
     ("potted_plant", (0.40, 0.80, 0.40), 0.40),
     ("tv",           (1.10, 0.65, 0.08), 0.40),
     ("lamp",         (0.30, 1.50, 0.30), 0.40),
+    ("cabinet",      (0.90, 1.20, 0.50), 0.45),
+    ("fridge",       (0.80, 1.75, 0.70), 0.40),
 ]
 
 

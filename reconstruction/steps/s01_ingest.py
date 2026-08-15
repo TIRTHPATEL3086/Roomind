@@ -43,8 +43,14 @@ def resolve_frames_dir(input_path: Path) -> Path:
 
 
 def _iter_frames(input_path: Path):
-    """Yield BGR frames from a video file or a directory of stills."""
+    """Yield BGR frames from a single image, a video file or a directory of stills."""
     input_path = resolve_frames_dir(input_path)
+    if input_path.is_file() and input_path.suffix.lower() in IMAGE_SUFFIXES:
+        img = cv2.imread(str(input_path), cv2.IMREAD_COLOR)
+        if img is not None:
+            yield img
+        return
+
     if input_path.is_dir():
         files = sorted(p for p in input_path.iterdir()
                        if p.suffix.lower() in IMAGE_SUFFIXES)

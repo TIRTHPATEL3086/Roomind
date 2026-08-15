@@ -8,6 +8,7 @@ import asyncio
 import logging
 import sys
 import time
+import threading
 from contextlib import asynccontextmanager
 
 if sys.platform == "win32":
@@ -47,6 +48,28 @@ async def lifespan(app: FastAPI):
     await robot_service.bootstrap(DEFAULT_CAPABILITIES, scene)
     await mqtt_service.connect()
 
+    # Automatically start ARIA simulator in sim mode so the robot is always online with the website
+    sim_instance = None
+    if settings.robot_mode == "sim":
+        try:
+            from pathlib import Path
+            sim_dir = Path(__file__).resolve().parents[1] / "firmware" / "sim"
+            if str(sim_dir) not in sys.path:
+                sys.path.insert(0, str(sim_dir))
+            from robot_sim import AriaSim
+
+            sim_instance = AriaSim(
+                robot_id=settings.robot_id,
+                broker=settings.mqtt_host,
+                port=settings.mqtt_port,
+            )
+            sim_thread = threading.Thread(target=sim_instance.run, daemon=True, name="AriaSimThread")
+            sim_thread.start()
+            log.info("ARIA background simulator auto-started (robot=%s, broker=%s:%d)",
+                     settings.robot_id, settings.mqtt_host, settings.mqtt_port)
+        except Exception as e:
+            log.warning("Could not auto-start ARIA simulator: %s", e)
+
     if scene:
         n = rag_service.index_room(scene)
         log.info("indexed %d objects for retrieval (backend=%s)",
@@ -63,6 +86,8 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    if sim_instance:
+        sim_instance.stop()
     await robot_service.shutdown()
     await mqtt_service.disconnect()
     log.info("RoomMind shutting down")

@@ -31,7 +31,7 @@ import { Panel } from "./ui/Panel";
  */
 
 const MAX_UPLOAD_MB = 512;
-const VIDEO_TYPES = /\.(mp4|mov|m4v|avi|mkv|webm)$/i;
+const ACCEPTED_TYPES = /\.(mp4|mov|m4v|avi|mkv|webm|jpg|jpeg|png|webp)$/i;
 
 type Quality = "fast" | "medium" | "high";
 type Detector = "auto" | "fusion" | "yolo" | "geometric";
@@ -52,8 +52,8 @@ export function ScanUploadPanel({ roomId }: { roomId: string }) {
   const scanActive = useScanStore((s) => s.active);
 
   const accept = useCallback((f: File) => {
-    if (!VIDEO_TYPES.test(f.name)) {
-      setError(`${f.name} isn't a video. Use MP4, MOV, M4V, AVI, MKV or WebM.`);
+    if (!ACCEPTED_TYPES.test(f.name)) {
+      setError(`${f.name} isn't supported. Use MP4, MOV, WebM video, or JPG, PNG, WebP image.`);
       return;
     }
     if (f.size > MAX_UPLOAD_MB * 1024 * 1024) {
@@ -170,10 +170,10 @@ export function ScanUploadPanel({ roomId }: { roomId: string }) {
             <>
               <Upload size={18} className="text-ink-muted" />
               <span className="text-[11px] text-ink">
-                Drop a room video, or click to pick one
+                Drop a room video or photo, or click to pick one
               </span>
               <span className="text-[10px] text-ink-muted">
-                MP4 · MOV · MKV · WebM — up to {MAX_UPLOAD_MB} MB
+                MP4 · MOV · WebM · JPG · PNG · WebP — up to {MAX_UPLOAD_MB} MB
               </span>
             </>
           )}
@@ -181,7 +181,7 @@ export function ScanUploadPanel({ roomId }: { roomId: string }) {
         <input
           ref={inputRef}
           type="file"
-          accept="video/*"
+          accept="video/*,image/*"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
