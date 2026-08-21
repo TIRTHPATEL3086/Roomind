@@ -31,7 +31,18 @@ FIXTURE = CONTRACTS / "demo_room.json"
 # told apart by colour and by what they stand next to - cannot be demonstrated
 # in a room that has one of everything, and re-running the reconstruction to
 # see it would cost 27 seconds and a 1.5 GB venv.
-EXTRA_FIXTURES = ("demo_room_multi.json",)
+#
+# The five `demo_room_*` rooms after it ARE hand-written, one per common room
+# type (bedroom, office, kitchen, playroom, lounge) so the RoomSwitcher has a
+# real gallery to choose between instead of just the one living room.
+EXTRA_FIXTURES = (
+    "demo_room_multi.json",
+    "demo_room_bedroom.json",
+    "demo_room_office.json",
+    "demo_room_kitchen.json",
+    "demo_room_playroom.json",
+    "demo_room_lounge.json",
+)
 
 
 class SceneService:
@@ -62,6 +73,8 @@ class SceneService:
             self._graphs[extra["room_id"]] = extra
             log.info("scene '%s' loaded from fixture (%d objects)",
                      extra["room_id"], len(extra["objects"]))
+
+        return graph
 
     def reset_room(self, room_id: str = "demo_room") -> dict:
         """Reset a room back to its original demo fixture data."""

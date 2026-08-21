@@ -15,11 +15,12 @@ export function Alerts() {
   const alerts = useUIStore((s) => s.alerts);
   const dismiss = useUIStore((s) => s.dismissAlert);
 
-  // Auto-dismiss info toasts; leave warnings and errors for the user to clear.
+  // Auto-dismiss info toasts (command success, "added to room", etc.); leave
+  // warnings and errors for the user to clear themselves.
   useEffect(() => {
     const timers = alerts
       .filter((a) => a.level === "info")
-      .map((a) => setTimeout(() => dismiss(a.id), 4000));
+      .map((a) => setTimeout(() => dismiss(a.id), 2000));
     return () => timers.forEach(clearTimeout);
   }, [alerts, dismiss]);
 

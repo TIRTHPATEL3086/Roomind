@@ -130,7 +130,11 @@ export function S2_Understand() {
         return;
       }
       gsap.timeline({
-        scrollTrigger: { trigger: root.current, start: "top 65%", once: true },
+        scrollTrigger: {
+          trigger: root.current,
+          start: "top 65%",
+          toggleActions: "play none none reverse",
+        },
       }).counterUp(".rm-count", { to: count });
     },
     { scope: root, dependencies: [count] },

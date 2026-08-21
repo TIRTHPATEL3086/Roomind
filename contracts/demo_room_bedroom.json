@@ -1,0 +1,72 @@
+{
+  "room_id": "bedroom_suite",
+  "version": "1.0",
+  "name": "Serene Bedroom",
+  "units": "meters",
+  "up_axis": "Y",
+  "created_at": "2026-08-21T00:00:00Z",
+  "bounds": { "min": [-2.4, 0.0, -2.0], "max": [2.4, 2.6, 2.0] },
+  "floor_y": 0.0,
+  "mesh": {
+    "url": "/models/bedroom_suite.glb",
+    "format": "glb",
+    "draco": true,
+    "tri_count": 0,
+    "size_bytes": 0
+  },
+  "navmesh": {
+    "url": "/api/v1/rooms/bedroom_suite/navmesh",
+    "resolution": 0.05,
+    "origin": [-2.4, -2.0],
+    "width": 96,
+    "height": 80
+  },
+  "robot_dock": [0.0, 0.0, 0.0],
+  "objects": [
+    {
+      "id": "bed_01", "label": "bed", "position": [0.0, 0.275, 1.0],
+      "dimensions": [1.60, 0.55, 2.00], "rotation_y": 3.14159, "color": "#7C8FA6",
+      "confidence": 0.95, "is_obstacle": true, "is_climbable": true,
+      "surface_height": 0.55, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "side_table_01", "label": "side_table", "position": [-1.15, 0.25, 1.0],
+      "dimensions": [0.45, 0.50, 0.45], "rotation_y": 0.0, "color": "#8B5E3C",
+      "confidence": 0.90, "is_obstacle": true, "is_climbable": false,
+      "surface_height": 0.50, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "side_table_02", "label": "side_table", "position": [1.15, 0.25, 1.0],
+      "dimensions": [0.45, 0.50, 0.45], "rotation_y": 0.0, "color": "#8B5E3C",
+      "confidence": 0.90, "is_obstacle": true, "is_climbable": false,
+      "surface_height": 0.50, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "lamp_01", "label": "lamp", "position": [-1.9, 0.80, -1.3],
+      "dimensions": [0.35, 1.60, 0.35], "rotation_y": 0.0, "color": "#E8DCC8",
+      "confidence": 0.87, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "shelf_01", "label": "shelf", "position": [1.95, 0.90, -1.3],
+      "dimensions": [0.90, 1.80, 0.30], "rotation_y": 1.5708, "color": "#8B5E3C",
+      "confidence": 0.88, "is_obstacle": true, "is_climbable": false,
+      "surface_height": 1.80, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "rug_01", "label": "rug", "position": [0.0, 0.005, -0.3],
+      "dimensions": [2.00, 0.01, 1.80], "rotation_y": 0.0, "color": "#C9A0A0",
+      "confidence": 0.80, "is_obstacle": false, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "potted_plant_01", "label": "potted_plant", "position": [-2.0, 0.35, 1.6],
+      "dimensions": [0.40, 0.70, 0.40], "rotation_y": 0.0, "color": "#4A8C5C",
+      "confidence": 0.84, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    }
+  ],
+  "waypoints": [
+    { "name": "bedside", "position": [0.0, 0.0, 0.6] }
+  ]
+}

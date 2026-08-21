@@ -51,9 +51,9 @@ ACTION_HANDLERS: dict[str, str] = {
     "gesture": "_do_simple",
     "express": "_do_simple",
     "dance": "_do_simple",
-    "sit": "_do_simple",
+    "sit": "_do_sit",
     "jump": "_do_simple",
-    "climb": "_do_simple",
+    "climb": "_do_climb",
     "scan_area": "_do_simple",
     "remember_spot": "_do_simple",
     "photo": "_do_simple",
@@ -193,6 +193,36 @@ class RobotService:
             await self._set_status(record, "failed", repr(e))
         return record
 
+    async def reset_pose_for_room(self, room_id: str, graph: dict) -> None:
+        """Re-park ARIA at this room's dock instead of leaving her rendered at
+        her last position in whatever DIFFERENT room's coordinate space that
+        was.
+
+        There is exactly one simulated robot behind every room in the
+        switcher, so entering a room she has never been given a command in
+        showed her sitting wherever "go to the sofa" last left her in a
+        completely unrelated layout - correct telemetry, meaningless
+        position. Called from the same room-open/reset path the frontend
+        already runs on every switch (spec: resetRoom on roomId change), so
+        it fires exactly "at first", before any real command in this room,
+        and a command issued afterward is never overridden by it.
+        """
+        dock = graph.get("robot_dock", [0.0, 0.0, 0.0])
+        x, _, z = (float(v) for v in dock)
+        mqtt_service.publish_command(self.robot_id, {
+            "id": "", "action": "reset_pose", "target": None,
+            "params": {"x": x, "z": z, "yaw": 0.0},
+            "robot_id": self.robot_id, "seq": 0,
+        })
+        # Update the cached state immediately too, so a client that asks
+        # before the next 10 Hz telemetry tick doesn't see the stale pose.
+        self.state["pose"] = {"x": x, "y": 0.0, "z": z, "yaw": 0.0}
+        self.state["state"] = "idle"
+        self.state["current_command_id"] = None
+        await bus.publish("robot.telemetry", {
+            "pose": self.state["pose"], "state": "idle",
+        })
+
     async def cancel(self, command_id: str) -> None:
         cmd = self.commands.get(command_id)
         if not cmd:
@@ -227,7 +257,7 @@ class RobotService:
 
     # ── action handlers ──
 
-    async def _do_navigate(self, cmd: dict) -> None:
+    async def _do_navigate(self, cmd: dict, *, onto: bool = False) -> None:
         graph = self.graph_for(cmd.get("room_id"))
         if not graph:
             raise Unsafe("no scene graph loaded - cannot plan")
@@ -251,6 +281,18 @@ class RobotService:
         except (NoPathFound, NotFound) as e:
             await self._set_status(cmd, "rejected", str(e))
             return
+
+        if onto and target:
+            # "sit"/"climb" need her body actually over the furniture, not
+            # standing at the same clearance a plain "go to" stops at. The A*
+            # path above is deliberately collision-safe and stops outside the
+            # object's box; this appends one more straight hop onto it, which
+            # is safe here specifically because it's the object she was told
+            # to get onto, not an obstacle to avoid.
+            obj = planner_service.find_object(graph, target)
+            if obj is not None:
+                ox, _, oz = (float(v) for v in obj["position"])
+                path = [*path, (ox, oz)]
 
         cmd["path"] = [[round(x, 4), round(z, 4)] for x, z in path]
         await bus.publish("command.planned", {
@@ -315,14 +357,45 @@ class RobotService:
         })
 
     async def _do_climb(self, cmd: dict) -> None:
-        """Composite climb: navigate near the object if target is given, then execute climb animation."""
+        """Composite climb: navigate ONTO the object if target is given, then execute climb animation.
+
+        Climbing genuinely ends with her standing on/within the object's own
+        footprint (the climb gesture lifts body_y ~0.22 m to sell "on top of
+        it") - unlike sitting, "on the table" is supposed to put her inside
+        that footprint, just elevated. See _do_sit for why sit does NOT do
+        this.
+        """
         if cmd.get("target"):
             try:
-                await self._do_navigate(cmd)
+                await self._do_navigate(cmd, onto=True)
             except Exception as e:
                 log.warning("could not navigate before climbing: %s", e)
         mqtt_service.publish_command(self.robot_id, {
             "id": cmd["id"], "action": "climb", "target": cmd.get("target"),
+            "params": cmd.get("params") or {}, "robot_id": self.robot_id, "seq": cmd["seq"],
+        })
+        await self._set_status(cmd, "dispatched")
+
+    async def _do_sit(self, cmd: dict) -> None:
+        """Composite sit: walk up to the seat first, then play the sit animation
+        right there.
+
+        Deliberately does NOT use onto=True the way _do_climb does. Sitting
+        down is a person walking up to a couch and lowering themselves onto
+        the near edge - not teleporting to the object's centre first. Tried
+        the centre-of-object version; it visually reads as ARIA standing
+        inside/on top of the cushions rather than sitting at the sofa, which
+        is a worse result than the stand-off distance this replaces. The
+        actual "sit" pose (body_y down, legs bent) does the rest of the work
+        once she's stopped close in front of it.
+        """
+        if cmd.get("target"):
+            try:
+                await self._do_navigate(cmd)
+            except Exception as e:
+                log.warning("could not navigate before sitting: %s", e)
+        mqtt_service.publish_command(self.robot_id, {
+            "id": cmd["id"], "action": "sit", "target": cmd.get("target"),
             "params": cmd.get("params") or {}, "robot_id": self.robot_id, "seq": cmd["seq"],
         })
         await self._set_status(cmd, "dispatched")

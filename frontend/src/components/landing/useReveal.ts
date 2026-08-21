@@ -15,8 +15,8 @@ import { motionDisabled } from "../../motion/reducedMotion";
  *     one-shot fades that only need to know "is it on screen yet" — which is
  *     the one question IntersectionObserver answers, off the main thread.
  *
- * Elements unobserve themselves once shown, so scrolling back up does not
- * re-animate text the reader has already read.
+ * Elements toggle `is-visible` on both directions, so scrolling back up
+ * hides them again and scrolling back down replays the reveal.
  */
 export function useReveal<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -44,14 +44,16 @@ export function useReveal<T extends HTMLElement>() {
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
           const el = entry.target as HTMLElement;
-          // Stagger within a group so a row of cards arrives in sequence
-          // rather than as one block.
-          const delay = Number(el.dataset.revealDelay ?? 0);
-          el.style.transitionDelay = `${delay}ms`;
-          el.classList.add("is-visible");
-          io.unobserve(el);
+          if (entry.isIntersecting) {
+            // Stagger within a group so a row of cards arrives in sequence
+            // rather than as one block.
+            const delay = Number(el.dataset.revealDelay ?? 0);
+            el.style.transitionDelay = `${delay}ms`;
+            el.classList.add("is-visible");
+          } else {
+            el.classList.remove("is-visible");
+          }
         });
       },
       // Fire a little before the element is fully on screen, so the motion

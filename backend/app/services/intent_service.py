@@ -33,10 +33,10 @@ VERB_MAP: list[tuple[str, str]] = [
     (r"\b(perform|do a|do the|can you|execute)\b.*\bwave\b", "wave"),
     (r"\b(perform|do a|do the|can you|execute)\b.*\bnod\b", "nod"),
     # Direct gesture triggers
-    (r"\b(climb on|get on|step onto|mount|climb onto)\b", "climb"),
-    (r"\b(climb)\b", "climb"),
-    (r"\b(sit on|sit near|rest on)\b", "navigate"),
-    (r"\b(sit down|take a seat|sit)\b", "sit"),
+    (r"\b(climb on|get on|step onto|mount|climb onto|climb)\b", "climb"),
+    # "sit on the sofa" must sit ON it, not just walk over and stand there -
+    # this used to route to "navigate" and drop the sit entirely.
+    (r"\b(sit on|sit near|rest on|sit down|take a seat|sit)\b", "sit"),
     (r"\b(jump|hop|leap)\b", "jump"),
     (r"\b(go|drive|move|navigate|head|walk|run)\b.*\bto\b", "navigate"),
     (r"\bcome (here|to me|over)\b", "come_here"),
@@ -56,13 +56,13 @@ VERB_MAP: list[tuple[str, str]] = [
     (r"\bwhere('s| is| are)\b", "locate"),
 ]
 
-TARGETED = {"navigate", "look_at", "point_at", "present", "locate", "imagine", "climb"}
+TARGETED = {"navigate", "look_at", "point_at", "present", "locate", "imagine", "climb", "sit"}
 
 # The subset that MOVES or AIMS ARIA at one specific object, and therefore has
 # to know exactly which one. `locate` is excluded on purpose: "where's the
 # lamp?" is a question, and `answer()` gives it a better reply than the
 # resolver's clarification machinery would.
-MOVEMENT_VERBS = {"navigate", "present", "point_at", "look_at", "climb"}
+MOVEMENT_VERBS = {"navigate", "present", "point_at", "look_at", "climb", "sit"}
 
 
 @dataclass
@@ -171,8 +171,17 @@ class IntentService:
             # saying out loud rather than falling through to a generic reply.
             return Interpretation("ask", resolution=r)
 
-        verbs = [a for pat, a in VERB_MAP
-                 if a in MOVEMENT_VERBS and re.search(pat, t)]
+        # Deduplicated: "climb" (and potentially other actions) matches more
+        # than one VERB_MAP pattern for the SAME sentence - e.g. both "climb
+        # on|..." and the bare "climb" fire for "climb on the stool". Without
+        # dict.fromkeys() that reads as two different verbs, which the next
+        # check mistakes for a sequence ("go to X and point at Y") and bails
+        # out to Interpretation("none") - silently skipping the clarification
+        # path for perfectly ordinary single-verb sentences.
+        verbs = list(dict.fromkeys(
+            a for pat, a in VERB_MAP
+            if a in MOVEMENT_VERBS and re.search(pat, t)
+        ))
         if not verbs:
             return Interpretation("none")
         if len(verbs) > 1:

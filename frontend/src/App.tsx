@@ -92,7 +92,7 @@ export default function App() {
         // pointer events and each panel re-enables them for itself, so this
         // simply stops the wrapper from undoing that.
         <div className="pointer-events-none relative z-10 h-full w-full">
-          <WorldDashboard />
+          <WorldDashboard onBack={() => navigate("landing")} />
         </div>
       )}
     </div>

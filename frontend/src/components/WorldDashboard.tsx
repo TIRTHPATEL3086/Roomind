@@ -1,4 +1,4 @@
-import { Terminal } from "lucide-react";
+import { ArrowLeft, Terminal } from "lucide-react";
 
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useSceneStore } from "../store/sceneStore";
@@ -21,7 +21,7 @@ import { StatDot } from "./ui/Panel";
  * the router, so they survive the landing -> /app hand-off untouched. This
  * component renders only the UI that floats on top of the world.
  */
-export function WorldDashboard() {
+export function WorldDashboard({ onBack }: { onBack: () => void }) {
   useKeyboardShortcuts();
 
   const graph = useSceneStore((s) => s.graph);
@@ -36,6 +36,15 @@ export function WorldDashboard() {
       {/* top bar */}
       <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
         <div className="rm-glass pointer-events-auto flex items-center gap-3 px-3 py-2">
+          <button
+            type="button"
+            onClick={onBack}
+            title="Back to landing"
+            className="flex items-center gap-1 rounded p-1 text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
+          >
+            <ArrowLeft size={14} />
+          </button>
+          <span className="h-4 w-px bg-white/10" />
           <span className="font-display text-sm font-bold tracking-tight">
             Room<span className="text-aria">Mind</span>
           </span>

@@ -11,7 +11,11 @@ export default defineConfig({
       // Proxy the API through Vite so the app is same-origin in dev: no CORS
       // preflight on every request, and the WebSocket upgrade just works.
       "/api": {
-        target: "http://127.0.0.1:8000",
+        // Port 8000 is stuck on a phantom Windows listen socket that outlasts
+        // process kills and even survives PID reuse checks - see git history
+        // for the investigation. Backend runs on 8010 instead until a reboot
+        // clears it.
+        target: "http://127.0.0.1:8010",
         changeOrigin: true,
         ws: true,
       },

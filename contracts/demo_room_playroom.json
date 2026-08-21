@@ -1,0 +1,72 @@
+{
+  "room_id": "playroom",
+  "version": "1.0",
+  "name": "Playroom",
+  "units": "meters",
+  "up_axis": "Y",
+  "created_at": "2026-08-21T00:00:00Z",
+  "bounds": { "min": [-2.4, 0.0, -2.2], "max": [2.4, 2.6, 2.2] },
+  "floor_y": 0.0,
+  "mesh": {
+    "url": "/models/playroom.glb",
+    "format": "glb",
+    "draco": true,
+    "tri_count": 0,
+    "size_bytes": 0
+  },
+  "navmesh": {
+    "url": "/api/v1/rooms/playroom/navmesh",
+    "resolution": 0.05,
+    "origin": [-2.4, -2.2],
+    "width": 96,
+    "height": 88
+  },
+  "robot_dock": [0.0, 0.0, 0.0],
+  "objects": [
+    {
+      "id": "bench_01", "label": "bench", "position": [0.0, 0.225, -1.8],
+      "dimensions": [1.10, 0.45, 0.40], "rotation_y": 0.0, "color": "#F2C744",
+      "confidence": 0.88, "is_obstacle": true, "is_climbable": true,
+      "surface_height": 0.45, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "shelf_01", "label": "shelf", "position": [-1.95, 0.90, -1.2],
+      "dimensions": [0.90, 1.80, 0.30], "rotation_y": 1.5708, "color": "#3AAFA9",
+      "confidence": 0.86, "is_obstacle": true, "is_climbable": false,
+      "surface_height": 1.80, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "book_01", "label": "book", "position": [-1.95, 1.83, -1.2],
+      "dimensions": [0.25, 0.06, 0.18], "rotation_y": 0.0, "color": "#EF8354",
+      "confidence": 0.78, "is_obstacle": false, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "tv_01", "label": "tv", "position": [2.35, 1.10, -0.3],
+      "dimensions": [0.08, 0.65, 1.15], "rotation_y": 0.0, "color": "#111827",
+      "confidence": 0.93, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "trashcan_01", "label": "trashcan", "position": [1.6, 0.20, -1.9],
+      "dimensions": [0.30, 0.40, 0.30], "rotation_y": 0.0, "color": "#4C6B8A",
+      "confidence": 0.82, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "potted_plant_01", "label": "potted_plant", "position": [-2.0, 0.35, 1.6],
+      "dimensions": [0.40, 0.70, 0.40], "rotation_y": 0.0, "color": "#4A8C5C",
+      "confidence": 0.84, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "rug_01", "label": "rug", "position": [0.2, 0.005, 0.2],
+      "dimensions": [2.20, 0.01, 2.00], "rotation_y": 0.0, "color": "#EF8354",
+      "confidence": 0.80, "is_obstacle": false, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    }
+  ],
+  "waypoints": [
+    { "name": "play_area", "position": [0.2, 0.0, 0.2] }
+  ]
+}

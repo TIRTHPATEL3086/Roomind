@@ -25,12 +25,21 @@ log = logging.getLogger("roommind.planner")
 # is measured from the object's surface rather than from its centre.
 APPROACH_DISTANCE_M = 0.60
 
-# Breathing room beyond the clearance the navmesh already guarantees. The grid
-# is inflated by robot radius + geofence margin, so the nearest free cell to a
-# sofa is already 0.31 m from its side; this is the extra gap that makes ARIA
-# look like she stopped to look at something rather than like she nearly hit
-# it, and it leaves her arms room to point.
-APPROACH_CLEARANCE_M = 0.20
+# Breathing room beyond the clearance the navmesh already guarantees.
+#
+# Tightened for "almost touching it", but NOT all the way to zero - that was
+# tried and broke target selection outright. The ring of stand-off candidates
+# is generated at exactly this standoff, and the navmesh grid marks a cell
+# "free" using the SAME robot-radius+geofence inflation: zero clearance put
+# the whole ring exactly ON that boundary, where cell-grid rounding tips
+# candidates to "blocked" close to coin-flip. For the demo sofa that dropped
+# 24 ring candidates to 5, all on one degenerate sliver of the footprint far
+# from its front - "sit on the sofa" then legitimately routed to the nearest
+# corner of that sliver instead of the seating side, which is the "wrong
+# location" bug this fixes. 0.05 m restores full-ring candidate diversity
+# (5/24 -> 14/24 in that same room) while keeping the approach far tighter
+# than the original 0.20 m.
+APPROACH_CLEARANCE_M = 0.05
 
 # How many stand-off candidates around an object to actually plan routes to.
 # Every one costs an A*, and the ring is sampled far more finely than that so
@@ -44,12 +53,14 @@ def approach_distance(robot_id: str = "aria",
     """How far from an object's SURFACE ARIA should come to rest.
 
     Derived, not hardcoded: it is the robot's own footprint plus the safety
-    margin the navmesh already enforces plus a fixed sliver. Change the robot's
-    radius or the geofence and this follows, which is the point — a literal
-    0.5 in the code would silently stop being safe the day ARIA gets wider.
+    margin the navmesh already enforces. Change the robot's radius or the
+    geofence and this follows, which is the point — a literal 0.2 in the code
+    would silently stop being safe the day ARIA gets wider.
 
-    With the shipped configuration (radius 0.16, geofence 0.15) that is 0.51 m,
-    inside the 0.4-0.7 m band the behaviour is specified in.
+    With the shipped configuration (radius 0.16, geofence 0.05, clearance 0.05)
+    that is 0.26 m - close enough to read as "standing at it" rather than
+    "stopped short of it", while staying clear of the grid-rounding failure
+    mode a literal-zero clearance hit (see APPROACH_CLEARANCE_M).
     """
     if geofence_margin_m is None:
         geofence_margin_m = get_settings().geofence_margin_m

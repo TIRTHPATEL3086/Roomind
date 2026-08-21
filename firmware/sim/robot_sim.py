@@ -48,6 +48,16 @@ FIRMWARE_VERSION = "sim-1.0.0"
 DRAIN_DRIVING_PER_S = 1.0 / (45 * 60)
 DRAIN_IDLE_PER_S = 1.0 / (4 * 60 * 60)
 
+# Walking gait: without this, driving only ever moved drive.x/z - the legs sat
+# frozen in rest pose and ARIA slid across the floor like she was on casters.
+# One full swing cycle (both legs) per this many metres travelled, so a faster
+# `speed` param strides faster instead of covering more ground per step.
+WALK_STRIDE_M = 0.55
+HIP_SWING_DEG = 16.0
+KNEE_LIFT_DEG = 24.0
+ARM_SWING_DEG = 10.0
+WALK_MOVING_THRESHOLD = 0.01   # m/s below which she's considered stopped
+
 CAPABILITIES = [
     "navigate", "come_here", "stop", "follow_me", "dock", "turn", "set_speed",
     "look_at", "point_at", "wave", "nod", "shake_head", "gesture", "express",
@@ -154,6 +164,7 @@ class AriaSim:
         self._gesture: list[tuple[str, float, float]] = []
         self._gesture_until = 0.0
         self._hold_until = 0.0
+        self._walk_phase = 0.0
         self._seq = 0
         self._running = True
         self._lock = threading.Lock()
@@ -264,6 +275,7 @@ class AriaSim:
         self.speed = float(payload.get("speed", 0.30))
         self.current_command_id = payload.get("command_id")
         self.state = "driving" if self.waypoints else "idle"
+        self._walk_phase = 0.0
         self._ack(self.current_command_id, "accepted")
         log.info("path accepted: %d waypoints @ %.2f m/s",
                  len(self.waypoints), self.speed)
@@ -272,6 +284,26 @@ class AriaSim:
         action = cmd.get("action")
         cid = cmd.get("id")
         params = cmd.get("params") or {}
+
+        if action == "reset_pose":
+            # Internal, not a user capability: switching to a room ARIA has
+            # never been given a command in re-parks her at that room's dock
+            # instead of leaving her rendered wherever her last command left
+            # her in a DIFFERENT room's coordinate space, which lines up with
+            # nothing in the new layout. An instant snap, not a walk - there
+            # is no "previous position in this room" to walk from.
+            x, z = float(params.get("x", 0.0)), float(params.get("z", 0.0))
+            yaw = float(params.get("yaw", 0.0))
+            halt(self.drive)
+            self.drive.x, self.drive.z, self.drive.yaw = x, z, yaw
+            self.waypoints.clear()
+            self.wp_index = 0
+            self.turn_target = None
+            self._gesture.clear()
+            self.joints = dict(REST_POSE)
+            self.joint_target = dict(REST_POSE)
+            self.state = "idle"
+            return
 
         if self.estopped and action != "stop":
             self._ack(cid, "rejected", "estopped")
@@ -393,17 +425,48 @@ class AriaSim:
 
     def _drive_tick(self, dt: float) -> None:
         goal = self.waypoints[self.wp_index]
-        if step_towards(self.drive, goal, dt, self.speed):
+        arrived = step_towards(self.drive, goal, dt, self.speed)
+        self._walk_gait_tick(dt)
+        if arrived:
             self.wp_index += 1
             if self.wp_index >= len(self.waypoints):
                 self.waypoints.clear()
                 self.wp_index = 0
                 self.state = "idle"
+                self._settle_gait()
                 self._event("arrived", {"x": round(self.drive.x, 3),
                                         "z": round(self.drive.z, 3)})
                 self._done()
         else:
             self.state = "driving"
+
+    def _walk_gait_tick(self, dt: float) -> None:
+        """Swing hips/knees/arms in sync with ground speed, so driving reads as
+        walking rather than the whole body sliding across the floor with the
+        legs frozen in rest pose. A gesture already in flight (sit, climb, ...)
+        owns the same joints, so it gets priority - the gait resumes on its own
+        the next tick after the gesture releases them."""
+        if self._gesture:
+            return
+        speed = abs(self.drive.v)
+        if speed <= WALK_MOVING_THRESHOLD:
+            self._settle_gait()
+            return
+        self._walk_phase = (self._walk_phase + (speed / WALK_STRIDE_M) * dt) % 1.0
+        phase = self._walk_phase * 2 * math.pi
+        self.joint_target["l_hip"] = HIP_SWING_DEG * math.sin(phase)
+        self.joint_target["r_hip"] = -HIP_SWING_DEG * math.sin(phase)
+        self.joint_target["l_knee"] = KNEE_LIFT_DEG * max(0.0, math.sin(phase + math.pi))
+        self.joint_target["r_knee"] = KNEE_LIFT_DEG * max(0.0, math.sin(phase))
+        self.joint_target["l_shoulder_pitch"] = -ARM_SWING_DEG * math.sin(phase)
+        self.joint_target["r_shoulder_pitch"] = ARM_SWING_DEG * math.sin(phase)
+
+    def _settle_gait(self) -> None:
+        """Ease legs and arms back to the rest pose - used both when she comes
+        to a stop mid-tick and right on arrival, so she never freezes mid-stride."""
+        for key in ("l_hip", "r_hip", "l_knee", "r_knee",
+                    "l_shoulder_pitch", "r_shoulder_pitch"):
+            self.joint_target[key] = REST_POSE[key]
 
     def _gesture_tick(self, now: float) -> None:
         if not self._gesture:

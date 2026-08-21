@@ -1,0 +1,78 @@
+{
+  "room_id": "home_office",
+  "version": "1.0",
+  "name": "Focus Studio",
+  "units": "meters",
+  "up_axis": "Y",
+  "created_at": "2026-08-21T00:00:00Z",
+  "bounds": { "min": [-2.2, 0.0, -2.0], "max": [2.2, 2.6, 2.0] },
+  "floor_y": 0.0,
+  "mesh": {
+    "url": "/models/home_office.glb",
+    "format": "glb",
+    "draco": true,
+    "tri_count": 0,
+    "size_bytes": 0
+  },
+  "navmesh": {
+    "url": "/api/v1/rooms/home_office/navmesh",
+    "resolution": 0.05,
+    "origin": [-2.2, -2.0],
+    "width": 88,
+    "height": 80
+  },
+  "robot_dock": [0.0, 0.0, 0.0],
+  "objects": [
+    {
+      "id": "desk_01", "label": "desk", "position": [0.0, 0.375, -1.55],
+      "dimensions": [1.30, 0.75, 0.65], "rotation_y": 0.0, "color": "#5A4632",
+      "confidence": 0.93, "is_obstacle": true, "is_climbable": true,
+      "surface_height": 0.75, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "chair_01", "label": "chair", "position": [0.0, 0.45, -0.9],
+      "dimensions": [0.45, 0.90, 0.45], "rotation_y": 3.14159, "color": "#1F2937",
+      "confidence": 0.90, "is_obstacle": true, "is_climbable": true,
+      "surface_height": 0.46, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "shelf_01", "label": "shelf", "position": [-1.95, 0.90, 1.3],
+      "dimensions": [0.90, 1.80, 0.30], "rotation_y": 1.5708, "color": "#5A4632",
+      "confidence": 0.88, "is_obstacle": true, "is_climbable": false,
+      "surface_height": 1.80, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "laptop_01", "label": "laptop", "position": [0.0, 0.76, -1.55],
+      "dimensions": [0.32, 0.02, 0.22], "rotation_y": 0.0, "color": "#1A1A1E",
+      "confidence": 0.92, "is_obstacle": false, "is_climbable": false,
+      "surface_height": 0.78, "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "book_01", "label": "book", "position": [0.35, 0.78, -1.55],
+      "dimensions": [0.25, 0.06, 0.18], "rotation_y": 0.0, "color": "#B5654A",
+      "confidence": 0.82, "is_obstacle": false, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "trashcan_01", "label": "trashcan", "position": [0.8, 0.20, -1.0],
+      "dimensions": [0.30, 0.40, 0.30], "rotation_y": 0.0, "color": "#6B7280",
+      "confidence": 0.85, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "lamp_01", "label": "lamp", "position": [1.9, 0.80, 1.3],
+      "dimensions": [0.35, 1.60, 0.35], "rotation_y": 0.0, "color": "#D4B483",
+      "confidence": 0.87, "is_obstacle": true, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    },
+    {
+      "id": "rug_01", "label": "rug", "position": [0.0, 0.005, 0.0],
+      "dimensions": [2.20, 0.01, 1.60], "rotation_y": 0.0, "color": "#3B4A5A",
+      "confidence": 0.80, "is_obstacle": false, "is_climbable": false,
+      "source": "detected", "scale_confidence": 1.0
+    }
+  ],
+  "waypoints": [
+    { "name": "desk", "position": [0.0, 0.0, -0.9] }
+  ]
+}

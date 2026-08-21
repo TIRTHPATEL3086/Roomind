@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from app.core.errors import NotFound
+from app.services.robot_service import robot_service
 from app.services.scene_service import scene_service
 
 router = APIRouter()
@@ -29,11 +30,18 @@ async def get_room(room_id: str) -> dict:
 
 @router.post("/rooms/{room_id}/reset")
 async def reset_room(room_id: str) -> dict:
-    """Reset the room back to its default demo fixture."""
+    """Reset the room back to its default demo fixture.
+
+    The frontend calls this on every room switch (not just an explicit
+    "rescan"), which makes it the right place to re-park ARIA too - see
+    robot_service.reset_pose_for_room.
+    """
     try:
-        return scene_service.reset_room(room_id)
+        graph = scene_service.reset_room(room_id)
     except NotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    await robot_service.reset_pose_for_room(room_id, graph)
+    return graph
 
 
 @router.get("/rooms/{room_id}/objects/{object_id}")

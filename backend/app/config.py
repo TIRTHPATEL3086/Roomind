@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     groq_api_key: str = ""
     llm_provider: str = "auto"   # auto | groq | anthropic
-    llm_model: str = "llama-3.3-70b-versatile"
+    llm_model: str = "openai/gpt-oss-120b"
     llm_effort: str = "high"
     llm_max_tokens: int = 4096
     mock_llm: bool = False

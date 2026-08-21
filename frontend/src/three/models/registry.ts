@@ -50,26 +50,26 @@ const K = "/models/kenney";
 
 export const MODEL_REGISTRY: Record<string, ModelEntry> = {
   // ── the demo room ──
-  table: { url: `${K}/table.glb` },
-  chair: { url: `${K}/chairCushion.glb` },
-  sofa: { url: `${K}/loungeSofa.glb` },
+  table: { url: `${K}/tableGlass.glb` },
+  chair: { url: `${K}/chairRounded.glb` },
+  sofa: { url: `${K}/loungeSofaLong.glb` },
   shelf: { url: `${K}/bookcaseOpen.glb` },
   potted_plant: { url: `${K}/pottedPlant.glb`, fit: "contain", tint: false },
-  rug: { url: `${K}/rugRectangle.glb` },
+  rug: { url: `${K}/rugSquare.glb` },
   tv: { url: `${K}/televisionModern.glb` },
   lamp: { url: `${K}/lampRoundFloor.glb`, fit: "contain" },
 
   // ── labels the reconstruction and Imagine paths can also emit ──
   desk: { url: `${K}/desk.glb` },
   bed: { url: `${K}/bedDouble.glb` },
-  bench: { url: `${K}/bench.glb` },
+  bench: { url: `${K}/benchCushionLow.glb` },
   stool: { url: `${K}/stoolBar.glb`, fit: "contain" },
   fridge: { url: `${K}/kitchenFridge.glb` },
-  side_table: { url: `${K}/sideTable.glb` },
-  laptop: { url: `${K}/laptop.glb`, fit: "contain" },
-  book: { url: `${K}/books.glb`, fit: "contain" },
-  trashcan: { url: `${K}/trashcan.glb`, fit: "contain" },
-  cabinet: { url: `${K}/cabinetTelevision.glb` },
+  side_table: { url: `${K}/sideTableDrawers.glb` },
+  laptop: { url: `${K}/laptop.glb`, fit: "contain", tint: false },
+  book: { url: `${K}/books.glb`, fit: "contain", tint: false },
+  trashcan: { url: `${K}/trashcan.glb`, fit: "contain", tint: false },
+  cabinet: { url: `${K}/cabinetBedDrawer.glb` },
 };
 
 /**
