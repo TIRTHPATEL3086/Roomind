@@ -1,5 +1,6 @@
 import { Html } from "@react-three/drei";
-import { Suspense, useEffect, useRef } from "react";
+import { Component, Suspense, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
@@ -9,7 +10,8 @@ import type { SceneGraphObject } from "../types";
 import { FurnitureModel } from "./models/FurnitureModel";
 import { modelFor, urlsForLabels } from "./models/registry";
 
-/** Shown while an object's model is still in flight. */
+/** Shown while an object's model is still in flight, or in place of one that
+ *  failed to load. */
 function FallbackBox({
   dims,
   color,
@@ -23,6 +25,29 @@ function FallbackBox({
       <meshStandardMaterial color={color} transparent opacity={0.25} />
     </mesh>
   );
+}
+
+/**
+ * Suspense only covers the pending state; a rejected GLTF fetch (missing
+ * asset, bad URL) throws during render, which only an error boundary can
+ * catch. Without this, one missing model takes down the whole R3F Canvas
+ * (its own top-level error boundary unmounts the entire scene) instead of
+ * just that one object.
+ */
+class ModelErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn("furniture model failed to load, showing placeholder:", error);
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
 }
 
 /** A ring that pulses on the floor under an object - used for selection and,
@@ -113,18 +138,20 @@ function ObjectBox({
           room; the box below shows until its own model arrives. */}
       {model && (
         <Suspense fallback={<FallbackBox dims={[w, h, d]} color={accent} />}>
-          <FurnitureModel
-            url={model.url}
-            dims={[w, h, d]}
-            fit={model.fit}
-            yawOffset={model.yawOffset}
-            // Kenney's kit has its own warm palette, which fights this dark
-            // UI. The scene graph already carries a colour per object — the
-            // fixture's designed palette, or for a scanned room the object's
-            // real median pixel colour — so use that and keep the whole scene
-            // coherent with the labels, which are tinted from the same field.
-            tint={model.tint === false ? undefined : obj.color}
-          />
+          <ModelErrorBoundary fallback={<FallbackBox dims={[w, h, d]} color={accent} />}>
+            <FurnitureModel
+              url={model.url}
+              dims={[w, h, d]}
+              fit={model.fit}
+              yawOffset={model.yawOffset}
+              // Kenney's kit has its own warm palette, which fights this dark
+              // UI. The scene graph already carries a colour per object — the
+              // fixture's designed palette, or for a scanned room the object's
+              // real median pixel colour — so use that and keep the whole scene
+              // coherent with the labels, which are tinted from the same field.
+              tint={model.tint === false ? undefined : obj.color}
+            />
+          </ModelErrorBoundary>
         </Suspense>
       )}
 

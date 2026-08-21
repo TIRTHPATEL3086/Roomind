@@ -39,7 +39,7 @@ wandb/
 *.onnx
 *.tflite
 *.dlc
-!frontend/public/models/*.glb
+!frontend/public/models/**/*.glb
 
 # ── OS / editor ──
 Thumbs.db
