@@ -26,7 +26,7 @@
 
 > **🚀 "Bridging the gap between physical reality and digital AI through Semantic Scene Graphs and Embodied Robotics."**
 
-[🌐 **LIVE DEMO**](#) &nbsp;•&nbsp; [⚙️ **BUILD SPEC**](./ROOMMIND_BUILD_SPEC.md) &nbsp;•&nbsp; [📑 **ARCHITECTURE**](#-system-architecture)
+[🌐 **LIVE DEMO**](#) &nbsp;•&nbsp; [📑 **ARCHITECTURE**](#-system-architecture)
 
 </div>
 
