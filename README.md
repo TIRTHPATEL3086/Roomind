@@ -26,7 +26,7 @@
 
 > **🚀 "Bridging the gap between physical reality and digital AI through Semantic Scene Graphs and Embodied Robotics."**
 
-[🌐 **LIVE DEMO**](#) &nbsp;•&nbsp; [📑 **ARCHITECTURE**](#-system-architecture)
+[🌐 **LIVE DEMO**](#) &nbsp;•&nbsp; [▶️ **WATCH DEMO**](https://youtu.be/e9zUi_VcGUE)
 
 </div>
 
@@ -67,14 +67,6 @@ Traditional smart home platforms are 2D dashboards blind to spatial reality. **R
 | *6-beat camera flight into the room, 60fps performance* | *Live WebGL twin, clickable semantics, robot controls* |
 
 <br/>
-
-### 🟢 Embodied AI & Generation
-| 🤖 **ARIA Grounded Interaction** | 🪑 **Image-to-3D Generation** |
-| :---: | :---: |
-| <img src="https://via.placeholder.com/450x250/111827/8B5CF6?text=ARIA+Pointing" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="ARIA Pointing" /> | <img src="https://via.placeholder.com/450x250/111827/8B5CF6?text=Generative+3D" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Gen 3D" /> |
-| *"Where is the lamp?" — Turns head, calculates path, points.* | *Upload 2D image → 3D mesh placed in semantic graph.* |
-
-</div>
 
 <br/>
 
