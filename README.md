@@ -63,7 +63,7 @@ Traditional smart home platforms are 2D dashboards blind to spatial reality. **R
 ### 🟢 3D Cinematic Intro & Dashboard
 | 🎥 **GSAP Cinematic Landing** | 🖥️ **Live Room Dashboard** |
 | :---: | :---: |
-| <img src="C:\Users\purva\OneDrive\Pictures\Screenshots\Screenshot 2026-08-23 034020.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Intro" /> | <img src="C:\Users\purva\OneDrive\Pictures\Screenshots\Screenshot 2026-08-23 033954.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Dashboard" /> |
+| <img src="docs/screenshots/cinematic_intro.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Intro" /> | <img src="docs/screenshots/room_dashboard.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Dashboard" /> |
 | *6-beat camera flight into the room, 60fps performance* | *Live WebGL twin, clickable semantics, robot controls* |
 
 <br/>
@@ -88,6 +88,8 @@ Traditional smart home platforms are 2D dashboards blind to spatial reality. **R
 
 <div align="center">
   <img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,python,fastapi,pytorch,opencv,arduino,docker,github&perline=8" alt="Tech Stack Icons" />
+  <br/>
+  <img src="https://img.shields.io/badge/Arduino_App_Lab-00979D?style=for-the-badge&logo=arduino&logoColor=white" alt="Arduino App Lab" />
 </div>
 
 <br/>
