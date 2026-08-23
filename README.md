@@ -63,7 +63,7 @@ Traditional smart home platforms are 2D dashboards blind to spatial reality. **R
 ### 🟢 3D Cinematic Intro & Dashboard
 | 🎥 **GSAP Cinematic Landing** | 🖥️ **Live Room Dashboard** |
 | :---: | :---: |
-| <img src="https://via.placeholder.com/450x250/111827/8B5CF6?text=Cinematic+Intro" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Intro" /> | <img src="https://via.placeholder.com/450x250/111827/8B5CF6?text=3D+Room+Dashboard" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Dashboard" /> |
+| <img src="C:\Users\purva\OneDrive\Pictures\Screenshots\Screenshot 2026-08-23 034020.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Intro" /> | <img src="C:\Users\purva\OneDrive\Pictures\Screenshots\Screenshot 2026-08-23 033954.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Dashboard" /> |
 | *6-beat camera flight into the room, 60fps performance* | *Live WebGL twin, clickable semantics, robot controls* |
 
 <br/>
