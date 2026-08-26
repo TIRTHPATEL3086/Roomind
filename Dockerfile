@@ -32,6 +32,8 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 COPY backend/ ./backend/
 COPY infra/ ./infra/
 COPY docker/ ./docker/
+COPY contracts/ ./contracts/
+COPY firmware/ ./firmware/
 
 # Ensure start script has executable permissions and unix line endings
 RUN chmod +x docker/start.sh && \
