@@ -235,7 +235,7 @@ roommind/
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=3B82F6,6366F1,8B5CF6&height=150&section=footer&text=Engineered%20for%20the%20Future%20of%20Spatial%20AI&fontSize=28&fontAlignY=60&fontColor=ffffff" width="100%" alt="Footer" />
 
-**Built with ❤️ by [Tirth Patel](https://github.com/TIRTHPATEL3086)**
+
 
 *RoomMind — Breaking the boundaries between physical space and digital intelligence.* 🌌
 
