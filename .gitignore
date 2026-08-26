@@ -3,10 +3,23 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+*-venv/
+*.venv
+env/
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# ── Virtual environments (all naming patterns) ──
+.broker-venv/
+backend/.venv/
+.agent-venv/
+genai3d/.venv/
+reconstruction/.venv/
+
+# ── Large model files ──
+yolov8n.pt
 
 # ── Env & secrets ──
 .env
