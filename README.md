@@ -48,6 +48,7 @@
 <div align="center">
 
 ### 🌟 Cinematic Landing Page
+
 <img src="docs/screenshots/room_dashboard.png" width="90%" style="border-radius:12px; box-shadow: 0 20px 60px rgba(99,102,241,0.4);" alt="RoomMind Landing Page" />
 
 *GSAP-powered landing — 60fps 3D room preview, live stats: 9 joints · 60 FPS · &lt;3 min scan · 2ms E-stop*
