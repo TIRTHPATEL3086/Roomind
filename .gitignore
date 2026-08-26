@@ -61,3 +61,8 @@ Desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# ── AI tool configs (private) ──
+.trim/
+.cursor/
+*.bak
