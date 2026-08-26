@@ -237,6 +237,6 @@ roommind/
 
 
 
-*RoomMind — Breaking the boundaries between physical space and digital intelligence.* 🌌
+*RoomMind — Breaking the boundaries between physical space and digital intelligence.* 
 
 </div>
