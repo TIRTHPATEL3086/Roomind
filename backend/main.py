@@ -128,3 +128,17 @@ app.include_router(api_router)
 @app.get("/")
 async def root() -> dict:
     return {"name": "RoomMind", "docs": "/docs", "health": "/api/v1/health"}
+
+import os
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+dist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(dist_path):
+    @app.get("/app")
+    @app.get("/app/{full_path:path}")
+    async def serve_spa(full_path: str = ""):
+        return FileResponse(os.path.join(dist_path, "index.html"))
+
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="frontend_dist")
+
