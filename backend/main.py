@@ -125,9 +125,7 @@ async def timing_middleware(request, call_next):
 app.include_router(api_router)
 
 
-@app.get("/")
-async def root() -> dict:
-    return {"name": "RoomMind", "docs": "/docs", "health": "/api/v1/health"}
+# The root / is now served by StaticFiles below to render the frontend landing page.
 
 import os
 from fastapi.responses import FileResponse
