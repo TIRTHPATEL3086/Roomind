@@ -26,7 +26,7 @@
 
 > **🚀 "Bridging the gap between physical reality and digital AI through Semantic Scene Graphs and Embodied Robotics."**
 
-[🌐 **LIVE DEMO**](#) &nbsp;•&nbsp; [▶️ **WATCH DEMO**](https://youtu.be/e9zUi_VcGUE)
+[🌐 **LIVE DEMO**](https://roommind-cpib.onrender.com/) &nbsp;•&nbsp; [▶️ **WATCH DEMO**](https://youtu.be/e9zUi_VcGUE)
 
 </div>
 
