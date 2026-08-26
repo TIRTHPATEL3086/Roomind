@@ -1,0 +1,21 @@
+listeners:
+  default:
+    type: tcp
+    bind: 127.0.0.1:1883
+    max_connections: 50
+  ws:
+    type: ws
+    bind: 127.0.0.1:9001
+    max_connections: 50
+
+timeout_disconnect_delay: 5
+
+sys_interval: 20
+
+auth:
+  allow_anonymous: true
+  plugins:
+    - auth_anonymous
+
+topic_check:
+  enabled: false

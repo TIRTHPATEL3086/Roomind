@@ -1,0 +1,23 @@
+.env
+.env.example
+.git/
+.github/
+.gitignore
+.pytest_cache/
+__pycache__/
+.venv/
+.broker-venv/
+backend/.venv/
+storage/
+reconstruction/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+sim/
+docs/
+docker-compose.yml
+Makefile
+README.md
+DEPLOY.md
+tirth Ec project.md
+yolov8n.pt

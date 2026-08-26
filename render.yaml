@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: roommind
+    env: docker
+    region: singapore
+    plan: free
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
